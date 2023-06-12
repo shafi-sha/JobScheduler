@@ -1,6 +1,7 @@
 package com.christ.job.services.transactions.common;
 
 import com.christ.job.services.dbobjects.common.ErpCampusDBO;
+import com.christ.job.services.dbobjects.common.ErpSmsDBO;
 import jakarta.persistence.Tuple;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,19 @@ public class CommonApiTransaction {
 
     public Tuple getCampus() {
         return sessionFactory.withSession(s->s.createNativeQuery("select bo.campus_name from erp_campus bo where bo.record_status='A' and bo.erp_campus_id=1", Tuple.class)
+                .getSingleResult()).await().indefinitely();
+    }
+
+    public List<ErpSmsDBO> getMessageList() {
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where recordStatus='A' and smsIsSent=0 ", ErpSmsDBO.class).getResultList()).await().indefinitely();
+    }
+
+    public void updateSMS(List<ErpSmsDBO> erpSmsDBOList) {
+        sessionFactory.withTransaction((session, tx) -> session.mergeAll(erpSmsDBOList)).await().indefinitely();
+    }
+
+    public ErpSmsDBO getsmsDBO() {
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where recordStatus='A' and id=1088", ErpSmsDBO.class)
                 .getSingleResult()).await().indefinitely();
     }
 }

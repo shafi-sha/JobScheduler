@@ -91,6 +91,21 @@ public class QuartzConfig {
                 .storeDurably()
                 .build();
     }
+
+//    @Bean
+//    public JobDetail smsJobDetail() {
+//        JobDataMap jobDataMap = new JobDataMap();
+//        jobDataMap.put("jobName", "sendingMessage");
+//        jobDataMap.put("jobLauncher", jobLauncher);
+//        jobDataMap.put("jobLocator", jobLocator);
+//        jobDataMap.put("jobClass", "SendingMessageJob");
+//        return JobBuilder.newJob(QuartzJobLauncher.class)
+//                .withIdentity("sendingMessage")
+//                .setJobData(jobDataMap)
+//                .storeDurably()
+//                .build();
+//    }
+
 //
 //    @Bean
 //    public JobDetail jobFourDetail() {
@@ -144,6 +159,18 @@ public class QuartzConfig {
                 .withSchedule(CronScheduleBuilder.cronSchedule("00 35 13 * * ?"))
                 .build();
     }
+
+//    @Bean
+//    public Trigger smsJobTrigger() {
+//        return TriggerBuilder
+//                .newTrigger()
+//                .forJob(smsJobDetail())
+//                .withIdentity("smsJobTrigger")
+//                //.withSchedule(CronScheduleBuilder.cronSchedule("* 0/2 * * * ?")) //trigger that fire at every 2 minutes
+//                .withSchedule(CronScheduleBuilder.cronSchedule("10 58 19 * * ?"))
+//                .build();
+//    }
+
 //
 //    @Bean
 //    public Trigger jobFourTrigger() {
@@ -184,6 +211,9 @@ public class QuartzConfig {
 //            jobDetailsList.add(jobFourDetail());
 //            triggersList.add(jobFourTrigger());
 //        }
+
+//        jobDetailsList.add(smsJobDetail());
+//        triggersList.add(smsJobTrigger());
 
         /*
         * setting job details for all the jobs

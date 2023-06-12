@@ -3,6 +3,7 @@ package com.christ.job.services.common;
 import org.springframework.boot.autoconfigure.batch.BatchDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
@@ -16,6 +17,7 @@ import java.util.Properties;
 public class HibernateConfi {
 
     @Bean(name="entityManagerFactory")
+    @Primary
     public LocalSessionFactoryBean sessionFactory() {
         final LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
         sessionFactory.setDataSource(dataSource());
@@ -26,6 +28,7 @@ public class HibernateConfi {
     }
 
     @Bean
+    @Primary
     public DriverManagerDataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setUsername("Dev_Erp");
@@ -47,6 +50,7 @@ public class HibernateConfi {
     }
 
     @Bean
+    @Primary
     public PlatformTransactionManager hibernateTransactionManager() {
         final HibernateTransactionManager transactionManager = new HibernateTransactionManager();
         transactionManager.setSessionFactory(sessionFactory().getObject());

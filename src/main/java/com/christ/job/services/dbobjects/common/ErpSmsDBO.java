@@ -9,14 +9,14 @@ import java.time.LocalDateTime;
 
 @SuppressWarnings("serial")
 @Entity
-@Table(name = "erp_emails")
+@Table(name = "erp_sms")
+
 @Setter
 @Getter
-public class ErpEmailsDBO implements Serializable{
-
+public class ErpSmsDBO implements Serializable{
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name="erp_emails_id")
+	@Column(name="erp_sms_id")
 	public int id;
 	
 	@Column(name="erp_work_flow_process_notifications_id")
@@ -24,30 +24,36 @@ public class ErpEmailsDBO implements Serializable{
 	
 	@Column(name="erp_entries_id")
 	public Integer entryId;
-	
-	@Column(name="erp_emails_user_entries_id")
-	public Integer erpEmailsUserEntriesDBO;
+
+	@Column(name="erp_sms_user_entries_id")
+	public Integer erpSmsUserEntriesDbo;
 	
 	@Column(name="erp_users_id")
 	public Integer erpUsersDBO;
-
-	@Column(name = "erp_reminder_notifications_id")
-	private Integer erpReminderNotificationsDBO;
 	
-	@Column(name="erp_student_id")
+	@Column(name="student_id")
 	public Integer studentId;
 
-	@Column(name="recipient_email")
-	public String recipientEmail;
+	@Column(name="sender_mobile_no")
+	public String senderMobileNo;
+
+	@Column(name="recipient_mobile_no")
+	public String recipientMobileNo;
 	
-	@Column(name="email_content",columnDefinition="TEXT")
-	public String emailContent;
+	@Column(name="sms_content",columnDefinition="TEXT")
+	public String smsContent;
 	
-	@Column(name="email_is_sent")
-	public boolean emailIsSent;
+	@Column(name="sms_is_sent")
+	public boolean smsIsSent;
 	
-	@Column(name="email_sent_time")
-	public LocalDateTime emailSentTime;
+	@Column(name="sms_sent_time")
+	public LocalDateTime smsSentTime;
+	
+	@Column(name="sms_is_delivered")
+	public boolean smsIsDelivered;
+	
+	@Column(name="sms_delivered_time")
+	public LocalDateTime smsDeliveredTime;
 	
 	@Column(name="created_users_id", updatable = false)
 	public Integer createdUsersId;
@@ -57,4 +63,7 @@ public class ErpEmailsDBO implements Serializable{
 	
 	@Column(name="record_status")
 	public char recordStatus;
+	
+	@Column(name = "erp_reminder_notifications_id")
+	private Integer erpReminderNotificationsDBO;
 }

@@ -36,7 +36,6 @@ public class SendingMailTask implements Tasklet {
             if(!Utils.isNullOrEmpty(userMails)){
                 userMails1 = userMails.split(",");
             }
-            List<Er>
         }catch (Exception e){
             e.printStackTrace();
         }

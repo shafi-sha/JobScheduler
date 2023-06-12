@@ -28,19 +28,19 @@ import java.sql.Driver;
 public class HibernateConfig {
 
     @Bean("reactive_hibernate")
-    @Primary
+    //@Primary
     public EntityManagerFactory entityManagerFactory() {
         return Persistence.createEntityManagerFactory("ReactivePU");
     }
 
     @Bean
-    @Primary
+    //@Primary
     public Mutiny.SessionFactory reactiveSessionFactory(final @Qualifier("reactive_hibernate") EntityManagerFactory entityManagerFactory) {
         return entityManagerFactory.unwrap(Mutiny.SessionFactory.class);
     }
 
     @Bean
-    @Primary
+    //@Primary
     public Stage.SessionFactory futureSessionFactory(final @Qualifier("reactive_hibernate") EntityManagerFactory entityManagerFactory) {
         return entityManagerFactory.unwrap(Stage.SessionFactory.class);
     }
