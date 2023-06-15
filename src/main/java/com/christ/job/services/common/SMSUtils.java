@@ -3,41 +3,35 @@ package com.christ.job.services.common;
 import com.christ.job.services.dbobjects.common.ErpSmsDBO;
 import com.christ.job.services.dto.common.ErpSmsDTO;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Service
 public class SMSUtils {
 
-
-    public static List<ErpSmsDTO> convertDBOToDTO(List<ErpSmsDBO> erpSmsDBOList){
-        List<ErpSmsDTO> smsList = new ArrayList<>();
-        if(!Utils.isNullOrEmpty(erpSmsDBOList)){
-            for (ErpSmsDBO erpSmsDBO : erpSmsDBOList) {
-                ErpSmsDTO erpSmsDTO = new ErpSmsDTO();
-                erpSmsDTO.setId(erpSmsDBO.getId());
-                if(!Utils.isNullOrEmpty(erpSmsDBO.getRecipientMobileNo()))
-                    erpSmsDTO.setRecipientMobileNo(erpSmsDBO.getRecipientMobileNo());
-                //smsMessageDTO.setMessageEnqueueDate(erpSmsDBO.getMessageEnqueueDate());
-                if(!Utils.isNullOrEmpty(erpSmsDBO.getSmsContent()))
-                    erpSmsDTO.setSmsContent(erpSmsDBO.getSmsContent());
-                //smsMessageDTO.setMessage_id(erpSmsDBO.getId());
-//                if(erpSmsDBO.getMessagePriority()!=null && !erpSmsDBO.getMessagePriority().equals("") && !erpSmsDBO.getMessagePriority().equals(" "))
-//                    smsMessageDTO.setMessage_priority(Integer.toString(erpSmsDBO.getMessagePriority()));
-//                if(erpSmsDBO.getMessageStatus()!=null && !erpSmsDBO.getMessageStatus().isEmpty() && erpSmsDBO.getMessageStatus().length() > 0)
-//                    smsMessageDTO.setMessage_status(Integer.parseInt(erpSmsDBO.getMessageStatus()));
-//                erpSmsDTO.setSenderName(erpSmsDBO.getSenderName());
-                if(!Utils.isNullOrEmpty(erpSmsDBO.getSenderMobileNo()))
-                    erpSmsDTO.setSenderMobileNo(erpSmsDBO.getSenderMobileNo());
-                smsList.add(erpSmsDTO);
-            }
-        }
-        return smsList;
-    }
+//    @Autowired
+//    private static RestTemplate restTemplate;
+//
+//    public SMSUtils(RestTemplate restTemplate){
+//        SMSUtils.restTemplate = restTemplate;
+//    }
 
     public static List<ErpSmsDTO> sendSMS(List<ErpSmsDTO> erpSmsDTOList){
         List<ErpSmsDTO> erpSmsDTOS = new ArrayList<>();
@@ -52,7 +46,8 @@ public class SMSUtils {
         StringBuffer response = null;
         try{
             String formatRequestString = formatRequest(erpSmsDTO).toString();
-            response = sendRequest(formatRequestString);
+            //response = sendRequest(formatRequestString);
+            response = sendReq(formatRequestString);
         }catch(Throwable t){
             netOrIOExceptionRaised = true;
             t.printStackTrace();
@@ -60,33 +55,31 @@ public class SMSUtils {
         return formatResponse(erpSmsDTO, response, netOrIOExceptionRaised);
     }
 
-    public static StringBuffer sendRequest(String urlString)
-            throws Exception {
-        URL url = new URL(urlString);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(40000);
-        byte buffer[] = new byte[8192];
-        int read = 0;
-        // do request
-        long time = System.currentTimeMillis();
-        connection.connect();
-        InputStream responseBodyStream = connection.getInputStream();
-        StringBuffer responseBody = new StringBuffer();
-        while ((read = responseBodyStream.read(buffer)) != -1) {
-            responseBody.append(new String(buffer, 0, read));
-        }
-        connection.disconnect();
-        //time = System.currentTimeMillis() - time;
-        return responseBody;
-    }
-
     public static StringBuffer formatRequest(ErpSmsDTO erpSmsDTO) throws Throwable {
         StringBuffer str = new StringBuffer();
         str.append(Constants.SMS_FILE_CFG);
         str.append(getNVP("to", erpSmsDTO.getRecipientMobileNo(), false));
         str.append(getNVP("message", erpSmsDTO.getSmsContent(), true));
+        str.append(getNVP("template_id", erpSmsDTO.getTemplateId(), true));
         return str;
+    }
+
+    public static StringBuffer sendReq(String urlString) throws IOException, InterruptedException {
+        StringBuffer responseBf = new StringBuffer();
+//        ResponseEntity<String> response = restTemplate.exchange(urlString, HttpMethod.GET, null, String.class);
+//        System.out.println("response : "+ response);
+//        System.out.println("response getBody : "+ response.getBody());
+//        System.out.println("response getStatusCode : "+ response.getStatusCode());
+        //return responseBf.append(response.getBody());
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(urlString))
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        System.out.println("response : "+ response);
+        System.out.println("response body : "+ response.body());
+        System.out.println("response statusCode : "+ response.statusCode());
+        return responseBf.append(response.body());
     }
 
     public static StringBuffer getNVP(String name, String value, boolean encode) throws Exception {
@@ -102,53 +95,27 @@ public class SMSUtils {
     }
 
     public static ErpSmsDTO formatResponse(ErpSmsDTO erpSmsDTO, StringBuffer response, boolean netOrIOException){
-        // Process error if any
         if (netOrIOException){
-            //erpSmsDTO.setMessage_status(SMS_Message.MESSAGE_RETRY);
+            erpSmsDTO.setMessageStatus("RETRY");//retry
         }else{
             int c1 = response.indexOf("Code");
             if (c1 > 0){
                 // Error returned
-                //erpSmsDTO.setSms_gateway_response(response.toString());
-                //erpSmsDTO.setMessage_status(SMS_Message.MESSAGE_FAIL);
+                erpSmsDTO.setMessageStatus("FAILED");
 
             }else{
-                // MessageSent GUID="12143003" SUBMITDATE="7/15/2010 2:55:11 PM"
-                int x1 = response.indexOf("Message");
+                int x1 = response.indexOf("message");
                 if (x1 < 0){
                     // Unknown Error from gateway
-                    //erpSmsDTO.setSms_gateway_response(response.toString());
-                    //erpSmsDTO.setMessage_status(SMS_Message.MESSAGE_FAIL);
+                    erpSmsDTO.setMessageStatus("FAILED");
                 }else{
                     // Success
-                    int x3 = response.indexOf("GID=");
-                    int x4 = x3 +"GID=".length();
-                    int x5 = response.indexOf(" ", x4);
-
-                    String guid = response.substring(x4, x5);
-                    //erpSmsDTO.setSms_guid(guid);
-                    //erpSmsDTO.setSms_gateway_response(response.toString());
-                    //erpSmsDTO.setMessageStatus(SMS_Message.MESSAGE_SUCCESS);
+                    erpSmsDTO.setMessageStatus("SUCCESS");
                 }
-
             }
         }
+        erpSmsDTO.setSmsSentTime(LocalDateTime.now());
+        erpSmsDTO.setGatewayResponse(response.toString());
         return erpSmsDTO;
-
-    }
-
-    public static List<ErpSmsDBO> convertDTOToDBO(List<ErpSmsDTO> erpSmsDTOS) {
-        List<ErpSmsDBO> erpSmsDBOList = new ArrayList<>();
-        if(!Utils.isNullOrEmpty(erpSmsDTOS)){
-            for(ErpSmsDTO erpSmsDTO : erpSmsDTOS){
-                if(erpSmsDTO.getMessageStatus() != 2){
-                    ErpSmsDBO erpSmsDBO = new ErpSmsDBO();
-                    BeanUtils.copyProperties(erpSmsDTO, erpSmsDBO);
-                    erpSmsDBO.setSmsIsSent(true);
-                    erpSmsDBOList.add(erpSmsDBO);
-                }
-            }
-        }
-        return erpSmsDBOList;
     }
 }

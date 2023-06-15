@@ -52,15 +52,16 @@ public class CommonApiTransaction {
     }
 
     public List<ErpSmsDBO> getMessageList() {
-        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where recordStatus='A' and smsIsSent=0 ", ErpSmsDBO.class).getResultList()).await().indefinitely();
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where recordStatus='A' and templateId is not null and smsIsSent=0 ", ErpSmsDBO.class)
+                .getResultList()).await().indefinitely();
     }
 
     public void updateSMS(List<ErpSmsDBO> erpSmsDBOList) {
-        sessionFactory.withTransaction((session, tx) -> session.mergeAll(erpSmsDBOList)).await().indefinitely();
+        sessionFactory.withTransaction((session, tx) -> session.mergeAll(erpSmsDBOList.toArray())).await().indefinitely();
     }
 
     public ErpSmsDBO getsmsDBO() {
-        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where recordStatus='A' and id=1088", ErpSmsDBO.class)
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where id=1088", ErpSmsDBO.class)
                 .getSingleResult()).await().indefinitely();
     }
 }

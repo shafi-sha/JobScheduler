@@ -6,7 +6,7 @@ public class Constants {
 
     public static int SEND_SMS_COUNT = 0;
 
-    public static final String SMS_FILE_CFG = "https://alerts.kaleyra.com/api/web2sms.php?workingkey=752963615094k9zz8gk1&sender=CHRIST&";
+    public static final String SMS_FILE_CFG = "https://api-alerts.kaleyra.com/v4/?api_key=752963615094k9zz8gk1&method=sms&entity_id=1101356700000026901&sender=SMSCHR&";
 
     public Constants() {
     }

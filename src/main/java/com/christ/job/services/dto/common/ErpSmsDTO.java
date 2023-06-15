@@ -3,18 +3,23 @@ package com.christ.job.services.dto.common;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 public class ErpSmsDTO {
 
     private int id;
-    private String recipientMobileNo;
-    private String smsContent;
-    private String smsIsSent;
     private String senderMobileNo;
-    private String smsSentTime;
-    private String smsIsDelivered;
-    private String smsDeliveredTime;
-    private Integer messageStatus;
+    private String recipientMobileNo;
+    private String smsSubject;
+    private String smsContent;
+    private Boolean smsIsSent;
+    private LocalDateTime smsSentTime;
+    private Boolean smsIsDelivered;
+    private LocalDateTime smsDeliveredTime;
+    private String messageStatus;
+    private String templateId;
+    private String gatewayResponse;
 
 }

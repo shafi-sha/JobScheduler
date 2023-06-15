@@ -44,7 +44,7 @@ public class ErpEmailsDBO implements Serializable{
 	public String emailContent;
 	
 	@Column(name="email_is_sent")
-	public boolean emailIsSent;
+	public Boolean emailIsSent;
 	
 	@Column(name="email_sent_time")
 	public LocalDateTime emailSentTime;

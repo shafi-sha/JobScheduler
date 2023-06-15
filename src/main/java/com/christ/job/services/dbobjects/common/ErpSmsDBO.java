@@ -17,53 +17,66 @@ public class ErpSmsDBO implements Serializable{
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name="erp_sms_id")
-	public int id;
+	private int id;
 	
 	@Column(name="erp_work_flow_process_notifications_id")
-	public Integer erpWorkFlowProcessNotificationsDBO;
+	private Integer erpWorkFlowProcessNotificationsDBO;
 	
 	@Column(name="erp_entries_id")
-	public Integer entryId;
+	private Integer entryId;
 
 	@Column(name="erp_sms_user_entries_id")
-	public Integer erpSmsUserEntriesDbo;
+	private Integer erpSmsUserEntriesDbo;
 	
 	@Column(name="erp_users_id")
-	public Integer erpUsersDBO;
+	private Integer erpUsersDBO;
 	
 	@Column(name="student_id")
-	public Integer studentId;
+	private Integer studentId;
 
 	@Column(name="sender_mobile_no")
-	public String senderMobileNo;
+	private String senderMobileNo;
 
 	@Column(name="recipient_mobile_no")
-	public String recipientMobileNo;
+	private String recipientMobileNo;
+
+	@Column(name="sms_subject")
+	private String smsSubject;
 	
 	@Column(name="sms_content",columnDefinition="TEXT")
-	public String smsContent;
+	private String smsContent;
 	
 	@Column(name="sms_is_sent")
-	public boolean smsIsSent;
+	private Boolean smsIsSent;
 	
 	@Column(name="sms_sent_time")
-	public LocalDateTime smsSentTime;
+	private LocalDateTime smsSentTime;
 	
 	@Column(name="sms_is_delivered")
-	public boolean smsIsDelivered;
+	private Boolean smsIsDelivered;
 	
 	@Column(name="sms_delivered_time")
-	public LocalDateTime smsDeliveredTime;
-	
-	@Column(name="created_users_id", updatable = false)
-	public Integer createdUsersId;
-	
-	@Column(name="modified_users_id")
-	public Integer modifiedUsersId;	
-	
-	@Column(name="record_status")
-	public char recordStatus;
-	
+	private LocalDateTime smsDeliveredTime;
+
 	@Column(name = "erp_reminder_notifications_id")
 	private Integer erpReminderNotificationsDBO;
+
+	@Column(name="template_id")
+	private String templateId;
+
+	@Column(name="gateway_response",columnDefinition="TEXT")
+	private String gatewayResponse;
+
+	@Column(name="message_status")
+	private String messageStatus;
+
+	@Column(name="created_users_id", updatable = false)
+	private Integer createdUsersId;
+	
+	@Column(name="modified_users_id")
+	private Integer modifiedUsersId;	
+	
+	@Column(name="record_status")
+	private char recordStatus;
+	
 }
