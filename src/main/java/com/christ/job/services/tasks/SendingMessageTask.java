@@ -41,7 +41,8 @@ public class SendingMessageTask implements Tasklet {
             smsDBOList.clear();
             smsDBOList.add(erpSmsDBO);
             if(!Utils.isNullOrEmpty(smsDBOList)){
-                List<ErpSmsDTO> erpSmsDTOS = SMSUtils.sendSMS(convertDBOToDTO(smsDBOList));
+                //List<ErpSmsDTO> erpSmsDTOS = SMSUtils.sendSMS(convertDBOToDTO(smsDBOList));
+                List<ErpSmsDTO> erpSmsDTOS = SMSUtil.sendMessageList(convertDBOToDTO(smsDBOList));
                 transaction.updateSMS(convertDTOToDBO(erpSmsDTOS));
             }
         }catch (Exception e){
