@@ -33,7 +33,7 @@ public class SMSUtil {
 
     public static ErpSmsDTO sendMessage(ErpSmsDTO erpSmsDTO) throws Exception{
         try {
-            String response = sendRequest(erpSmsDTO.getRecipientMobileNo(), erpSmsDTO.getSmsContent(), erpSmsDTO.getTemplateId());
+            String response = sendRequest(formatSMSURIString(erpSmsDTO.getRecipientMobileNo(), erpSmsDTO.getSmsContent(), erpSmsDTO.getTemplateId()));
             if(!Utils.isNullOrEmpty(response)){
                 String messageStatus = "FAILED";
                 erpSmsDTO.setGatewayResponse(response);
@@ -59,7 +59,7 @@ public class SMSUtil {
         if(!Utils.isNullOrEmpty(messageList)){
             messageList.forEach(erpSmsDTO -> {
                 try {
-                    String response = sendRequest(erpSmsDTO.getRecipientMobileNo(), erpSmsDTO.getSmsContent(), erpSmsDTO.getTemplateId());
+                    String response = sendRequest(formatSMSURIString(erpSmsDTO.getRecipientMobileNo(), erpSmsDTO.getSmsContent(), erpSmsDTO.getTemplateId()));
                     if(!Utils.isNullOrEmpty(response)){
                         String messageStatus = "FAILED";
                         erpSmsDTO.setGatewayResponse(response);
@@ -86,7 +86,7 @@ public class SMSUtil {
     public static String sendMessage(String to, String messageBody, String templateId) throws Exception{
         String messageStatus = "FAILED";
         try {
-            String response = sendRequest(to, messageBody, templateId);
+            String response = sendRequest(formatSMSURIString(to, messageBody, templateId));
             if(!Utils.isNullOrEmpty(response)){
                 JSONObject data = (JSONObject) (new JSONParser()).parse(response);
                 if(!Utils.isNullOrEmpty(data)){
@@ -104,16 +104,19 @@ public class SMSUtil {
         return messageStatus;
     }
 
-    public static String sendRequest(String to, String messageBody, String templateId) throws Exception {
+    public static String formatSMSURIString(String to, String messageBody, String templateId) throws Exception{
         String uriString = UriComponentsBuilder.fromHttpUrl(Constants.SMS_FILE_CFG)
                 .queryParam("to", to)
                 .queryParam("message", URLEncoder.encode(messageBody, "utf-8"))
                 .queryParam("template_id", templateId)
                 .toUriString();
+        return uriString;
+    }
+
+    public static String sendRequest(String uriString) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(uriString))
-                .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();

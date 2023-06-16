@@ -11,6 +11,6 @@ public class Constants {
 
     public static final String SMS_FILE_CFG = "https://api-alerts.kaleyra.com/v4/?api_key=752963615094k9zz8gk1&method=sms&entity_id=1101356700000026901&sender=SMSCHR&";
 
-    private static final String EMAIL_REFRESH_TOKEN_URL = "https://www.googleapis.com/oauth2/v4/token";
+    public static final String EMAIL_REFRESH_TOKEN_URL = "https://www.googleapis.com/oauth2/v4/token";
 
 }

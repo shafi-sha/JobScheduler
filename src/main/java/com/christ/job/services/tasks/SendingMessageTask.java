@@ -43,7 +43,7 @@ public class SendingMessageTask implements Tasklet {
             if(!Utils.isNullOrEmpty(smsDBOList)){
                 //List<ErpSmsDTO> erpSmsDTOS = SMSUtils.sendSMS(convertDBOToDTO(smsDBOList));
                 List<ErpSmsDTO> erpSmsDTOS = SMSUtil.sendMessageList(convertDBOToDTO(smsDBOList));
-                transaction.updateSMS(convertDTOToDBO(erpSmsDTOS));
+                transaction.updateDBOS(convertDTOToDBO(erpSmsDTOS));
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -63,8 +63,8 @@ public class SendingMessageTask implements Tasklet {
         return smsList;
     }
 
-    public static List<ErpSmsDBO> convertDTOToDBO(List<ErpSmsDTO> erpSmsDTOS) {
-        List<ErpSmsDBO> erpSmsDBOList = new ArrayList<>();
+    public static List<Object> convertDTOToDBO(List<ErpSmsDTO> erpSmsDTOS) {
+        List<Object> erpSmsDBOList = new ArrayList<>();
         if(!Utils.isNullOrEmpty(erpSmsDTOS)){
             for(ErpSmsDTO erpSmsDTO : erpSmsDTOS){
                 ErpSmsDBO erpSmsDBO = new ErpSmsDBO();

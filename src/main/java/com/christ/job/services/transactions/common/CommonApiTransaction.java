@@ -1,6 +1,7 @@
 package com.christ.job.services.transactions.common;
 
 import com.christ.job.services.dbobjects.common.ErpCampusDBO;
+import com.christ.job.services.dbobjects.common.ErpNotificationEmailSenderSettingsDBO;
 import com.christ.job.services.dbobjects.common.ErpSmsDBO;
 import jakarta.persistence.Tuple;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -56,12 +57,21 @@ public class CommonApiTransaction {
                 .getResultList()).await().indefinitely();
     }
 
-    public void updateSMS(List<ErpSmsDBO> erpSmsDBOList) {
-        sessionFactory.withTransaction((session, tx) -> session.mergeAll(erpSmsDBOList.toArray())).await().indefinitely();
-    }
+//    public void updateSMS(List<ErpSmsDBO> erpSmsDBOList) {
+//        sessionFactory.withTransaction((session, tx) -> session.mergeAll(erpSmsDBOList.toArray())).await().indefinitely();
+//    }
 
     public ErpSmsDBO getsmsDBO() {
         return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where id=1088", ErpSmsDBO.class)
                 .getSingleResult()).await().indefinitely();
+    }
+
+    public List<ErpNotificationEmailSenderSettingsDBO> getEmailSenderSettings() {
+        return sessionFactory.withSession(s->s.createQuery("from ErpNotificationEmailSenderSettingsDBO where recordStatus='A'", ErpNotificationEmailSenderSettingsDBO.class)
+                .getResultList()).await().indefinitely();
+    }
+
+    public void updateDBOS(List<Object> dboList) {
+        sessionFactory.withTransaction((session, tx) -> session.mergeAll(dboList.toArray())).await().indefinitely();
     }
 }
