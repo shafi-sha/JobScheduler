@@ -72,20 +72,22 @@ public class QuartzJobLauncher extends QuartzJobBean {
             if(!Utils.isNullOrEmpty(jobParametersMap)){
                 for (Map.Entry<String, Object> entry : jobParametersMap.entrySet()) {
                     if(!Utils.isNullOrEmpty(entry.getKey()) && !Utils.isNullOrEmpty(entry.getValue())){
-                        if(entry.getValue() instanceof String){
-                            builder.addString(entry.getKey(), String.valueOf(entry.getValue()));
+                        String key = entry.getKey();
+                        Object value = entry.getValue();
+                        if(value instanceof String){
+                            builder.addString(key, String.valueOf(entry.getValue()));
                         }
-                        if(entry.getValue() instanceof Double){
-                            builder.addDouble(entry.getKey(), (Double) entry.getValue());
+                        if(value instanceof Double){
+                            builder.addDouble(key, (Double) entry.getValue());
                         }
-                        if(entry.getValue() instanceof Long){
-                            builder.addLong(entry.getKey(), (Long) entry.getValue());
+                        if(value instanceof Long){
+                            builder.addLong(key, (Long) entry.getValue());
                         }
-                        if(entry.getValue() instanceof LocalDate){
-                            builder.addLocalDate(entry.getKey(), (LocalDate) entry.getValue());
+                        if(value instanceof LocalDate){
+                            builder.addLocalDate(key, (LocalDate) entry.getValue());
                         }
-                        if(entry.getValue() instanceof LocalDateTime){
-                            builder.addLocalDateTime(entry.getKey(), (LocalDateTime) entry.getValue());
+                        if(value instanceof LocalDateTime){
+                            builder.addLocalDateTime(key, (LocalDateTime) entry.getValue());
                         }
                     }
                 }

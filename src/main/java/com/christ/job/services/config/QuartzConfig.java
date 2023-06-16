@@ -106,6 +106,20 @@ public class QuartzConfig {
                 .build();
     }
 
+    @Bean
+    public JobDetail refreshMailTokenJobDetail() {
+        JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put("jobName", "refreshMailToken");
+        jobDataMap.put("jobLauncher", jobLauncher);
+        jobDataMap.put("jobLocator", jobLocator);
+        jobDataMap.put("jobClass", "RefreshMailTokenJob");
+        return JobBuilder.newJob(QuartzJobLauncher.class)
+                .withIdentity("refreshMailToken")
+                .setJobData(jobDataMap)
+                .storeDurably()
+                .build();
+    }
+
 //
 //    @Bean
 //    public JobDetail jobFourDetail() {
@@ -166,7 +180,16 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(smsJobDetail())
                 .withIdentity("smsJobTrigger")
-                //.withSchedule(CronScheduleBuilder.cronSchedule("* 0/2 * * * ?")) //trigger that fire at every 2 minutes
+                .withSchedule(CronScheduleBuilder.cronSchedule("30 58 11 * * ?"))
+                .build();
+    }
+
+    @Bean
+    public Trigger refreshMailTokenJobTrigger() {
+        return TriggerBuilder
+                .newTrigger()
+                .forJob(refreshMailTokenJobDetail())
+                .withIdentity("refreshMailTokenJobTrigger")
                 .withSchedule(CronScheduleBuilder.cronSchedule("45 31 17 * * ?"))
                 .build();
     }
@@ -215,6 +238,9 @@ public class QuartzConfig {
         jobDetailsList.add(smsJobDetail());
         triggersList.add(smsJobTrigger());
 
+        jobDetailsList.add(refreshMailTokenJobDetail());
+        triggersList.add(refreshMailTokenJobTrigger());
+
         /*
         * setting job details for all the jobs
         * setting triggers for all the jobs
@@ -225,12 +251,6 @@ public class QuartzConfig {
         scheduler.setTriggers(
                 triggersList.toArray(Trigger[]::new)
         );
-//        scheduler.setJobDetails(
-//                jobOneDetail(), jobTwoDetail(), jobThreeDetail(), jobFourDetail()
-//        );
-//        scheduler.setTriggers(
-//                jobOneTrigger(), jobTwoTrigger(), jobThreeTrigger(), jobFourTrigger()
-//        );
         return scheduler;
     }
 

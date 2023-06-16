@@ -36,6 +36,7 @@ public class SMSUtil {
             String response = sendRequest(erpSmsDTO.getRecipientMobileNo(), erpSmsDTO.getSmsContent(), erpSmsDTO.getTemplateId());
             if(!Utils.isNullOrEmpty(response)){
                 String messageStatus = "FAILED";
+                erpSmsDTO.setGatewayResponse(response);
                 JSONObject data = (JSONObject) (new JSONParser()).parse(response);
                 if(!Utils.isNullOrEmpty(data)){
                     String status = (String) data.get("status");
@@ -61,6 +62,7 @@ public class SMSUtil {
                     String response = sendRequest(erpSmsDTO.getRecipientMobileNo(), erpSmsDTO.getSmsContent(), erpSmsDTO.getTemplateId());
                     if(!Utils.isNullOrEmpty(response)){
                         String messageStatus = "FAILED";
+                        erpSmsDTO.setGatewayResponse(response);
                         JSONObject data = (JSONObject) (new JSONParser()).parse(response);
                         if(!Utils.isNullOrEmpty(data)){
                             String status = (String) data.get("status");
@@ -81,9 +83,29 @@ public class SMSUtil {
         return erpSmsDTOS;
     }
 
+    public static String sendMessage(String to, String messageBody, String templateId) throws Exception{
+        String messageStatus = "FAILED";
+        try {
+            String response = sendRequest(to, messageBody, templateId);
+            if(!Utils.isNullOrEmpty(response)){
+                JSONObject data = (JSONObject) (new JSONParser()).parse(response);
+                if(!Utils.isNullOrEmpty(data)){
+                    String status = (String) data.get("status");
+                    if("OK".equalsIgnoreCase(status) || "200".equalsIgnoreCase(status)){
+                        if(!Utils.isNullOrEmpty((String) data.get("message"))){
+                            messageStatus = "SUCCESS";
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return messageStatus;
+    }
+
     public static String sendRequest(String to, String messageBody, String templateId) throws Exception {
-        String uri = Constants.SMS_FILE_CFG;
-        String uriString = UriComponentsBuilder.fromHttpUrl(uri)
+        String uriString = UriComponentsBuilder.fromHttpUrl(Constants.SMS_FILE_CFG)
                 .queryParam("to", to)
                 .queryParam("message", URLEncoder.encode(messageBody, "utf-8"))
                 .queryParam("template_id", templateId)
