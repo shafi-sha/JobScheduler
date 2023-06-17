@@ -1,5 +1,6 @@
 package com.christ.job.services.common;
 
+import com.christ.job.services.dbobjects.common.ErpSmsDBO;
 import com.christ.job.services.dto.common.ErpSmsDTO;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -31,7 +32,7 @@ public class SMSUtil {
 //        return result;
 //    }
 
-    public static ErpSmsDTO sendMessage(ErpSmsDTO erpSmsDTO) throws Exception{
+    public static ErpSmsDTO sendMessageDTO(ErpSmsDTO erpSmsDTO) throws Exception{
         try {
             String response = sendRequest(formatSMSURIString(erpSmsDTO.getRecipientMobileNo(), erpSmsDTO.getSmsContent(), erpSmsDTO.getTemplateId()));
             if(!Utils.isNullOrEmpty(response)){
@@ -54,7 +55,7 @@ public class SMSUtil {
         return erpSmsDTO;
     }
 
-    public static List<ErpSmsDTO> sendMessageList(List<ErpSmsDTO> messageList) throws Exception{
+    public static List<ErpSmsDTO> sendMessageListDTOs(List<ErpSmsDTO> messageList) throws Exception{
         List<ErpSmsDTO> erpSmsDTOS = new ArrayList<>();
         if(!Utils.isNullOrEmpty(messageList)){
             messageList.forEach(erpSmsDTO -> {
@@ -83,25 +84,61 @@ public class SMSUtil {
         return erpSmsDTOS;
     }
 
+//    public static String sendMessage(String to, String messageBody, String templateId) throws Exception{
+//        String messageStatus = "FAILED";
+//        try {
+//            String response = sendRequest(formatSMSURIString(to, messageBody, templateId));
+//            if(!Utils.isNullOrEmpty(response)){
+//                JSONObject data = (JSONObject) (new JSONParser()).parse(response);
+//                if(!Utils.isNullOrEmpty(data)){
+//                    String status = (String) data.get("status");
+//                    if("OK".equalsIgnoreCase(status) || "200".equalsIgnoreCase(status)){
+//                        if(!Utils.isNullOrEmpty((String) data.get("message"))){
+//                            messageStatus = "SUCCESS";
+//                        }
+//                    }
+//                }
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return messageStatus;
+//    }
+
     public static String sendMessage(String to, String messageBody, String templateId) throws Exception{
-        String messageStatus = "FAILED";
-        try {
-            String response = sendRequest(formatSMSURIString(to, messageBody, templateId));
-            if(!Utils.isNullOrEmpty(response)){
-                JSONObject data = (JSONObject) (new JSONParser()).parse(response);
-                if(!Utils.isNullOrEmpty(data)){
-                    String status = (String) data.get("status");
-                    if("OK".equalsIgnoreCase(status) || "200".equalsIgnoreCase(status)){
-                        if(!Utils.isNullOrEmpty((String) data.get("message"))){
-                            messageStatus = "SUCCESS";
+        return sendRequest(formatSMSURIString(to, messageBody, templateId));
+    }
+
+    public static List<Object> sendAllMessages(List<ErpSmsDBO> messageList) throws Exception{
+        List<Object> erpSmsDBOS = new ArrayList<>();
+        if(!Utils.isNullOrEmpty(messageList)){
+            messageList.forEach(erpSmsDBO -> {
+                try {
+                    if(!Utils.isNullOrEmpty(erpSmsDBO.getRecipientMobileNo()) && !Utils.isNullOrEmpty(erpSmsDBO.getSmsContent()) && !Utils.isNullOrEmpty(erpSmsDBO.getTemplateId())){
+                        String response = sendRequest(formatSMSURIString(erpSmsDBO.getRecipientMobileNo(), erpSmsDBO.getSmsContent(), erpSmsDBO.getTemplateId()));
+                        if(!Utils.isNullOrEmpty(response)){
+                            String messageStatus = "FAILED";
+                            erpSmsDBO.setGatewayResponse(response);
+                            JSONObject data = (JSONObject) (new JSONParser()).parse(response);
+                            if(!Utils.isNullOrEmpty(data)){
+                                String status = (String) data.get("status");
+                                if("OK".equalsIgnoreCase(status) || "200".equalsIgnoreCase(status)){
+                                    if(!Utils.isNullOrEmpty((String) data.get("message"))){
+                                        messageStatus = "SUCCESS";
+                                        erpSmsDBO.setSmsIsSent(true);
+                                    }
+                                }
+                            }
+                            erpSmsDBO.setMessageStatus(messageStatus);
                         }
                     }
+                    erpSmsDBOS.add(erpSmsDBO);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            });
         }
-        return messageStatus;
+        return erpSmsDBOS;
     }
 
     public static String formatSMSURIString(String to, String messageBody, String templateId) throws Exception{

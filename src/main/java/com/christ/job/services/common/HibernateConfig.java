@@ -28,21 +28,22 @@ import java.sql.Driver;
 public class HibernateConfig {
 
     @Bean("reactive_hibernate")
-    //@Primary
     public EntityManagerFactory entityManagerFactory() {
         return Persistence.createEntityManagerFactory("ReactivePU");
     }
 
     @Bean
-    //@Primary
     public Mutiny.SessionFactory reactiveSessionFactory(final @Qualifier("reactive_hibernate") EntityManagerFactory entityManagerFactory) {
         return entityManagerFactory.unwrap(Mutiny.SessionFactory.class);
     }
 
     @Bean
-    //@Primary
     public Stage.SessionFactory futureSessionFactory(final @Qualifier("reactive_hibernate") EntityManagerFactory entityManagerFactory) {
         return entityManagerFactory.unwrap(Stage.SessionFactory.class);
+    }
+
+    private static class Wrapper {
+        EntityManagerFactory entityManagerFactory;
     }
 
 //    @Bean
@@ -86,7 +87,4 @@ public class HibernateConfig {
 //        return entityManagerFactory.unwrap(Stage.SessionFactory.class);
 //    }
 
-    private static class Wrapper {
-        EntityManagerFactory entityManagerFactory;
-    }
 }

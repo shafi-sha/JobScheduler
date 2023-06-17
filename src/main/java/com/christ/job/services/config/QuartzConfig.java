@@ -180,7 +180,7 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(smsJobDetail())
                 .withIdentity("smsJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("00 44 16 * * ?"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("0/10 * * * * ?"))
                 .build();
     }
 
@@ -190,7 +190,7 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(refreshMailTokenJobDetail())
                 .withIdentity("refreshMailTokenJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("00 36 17 * * ?"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("00 55 08 * * ?"))
                 .build();
     }
 
@@ -238,8 +238,8 @@ public class QuartzConfig {
         jobDetailsList.add(smsJobDetail());
         triggersList.add(smsJobTrigger());
 
-        jobDetailsList.add(refreshMailTokenJobDetail());
-        triggersList.add(refreshMailTokenJobTrigger());
+//        jobDetailsList.add(refreshMailTokenJobDetail());
+//        triggersList.add(refreshMailTokenJobTrigger());
 
         /*
         * setting job details for all the jobs

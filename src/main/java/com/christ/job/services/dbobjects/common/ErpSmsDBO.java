@@ -7,13 +7,14 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@SuppressWarnings("serial")
 @Entity
 @Table(name = "erp_sms")
-
 @Setter
 @Getter
 public class ErpSmsDBO implements Serializable{
+
+	private static final long serialVersionUID = 8841255585680757282L;
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name="erp_sms_id")
@@ -21,16 +22,16 @@ public class ErpSmsDBO implements Serializable{
 	
 	@Column(name="erp_work_flow_process_notifications_id")
 	private Integer erpWorkFlowProcessNotificationsDBO;
-	
+
 	@Column(name="erp_entries_id")
 	private Integer entryId;
 
 	@Column(name="erp_sms_user_entries_id")
 	private Integer erpSmsUserEntriesDbo;
-	
+
 	@Column(name="erp_users_id")
 	private Integer erpUsersDBO;
-	
+
 	@Column(name="student_id")
 	private Integer studentId;
 
@@ -48,10 +49,10 @@ public class ErpSmsDBO implements Serializable{
 	
 	@Column(name="sms_is_sent")
 	private Boolean smsIsSent;
-	
+
 	@Column(name="sms_sent_time")
 	private LocalDateTime smsSentTime;
-	
+
 	@Column(name="sms_is_delivered")
 	private Boolean smsIsDelivered;
 	

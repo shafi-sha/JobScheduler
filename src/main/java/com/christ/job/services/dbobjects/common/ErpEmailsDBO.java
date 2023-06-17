@@ -4,15 +4,17 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@SuppressWarnings("serial")
 @Entity
 @Table(name = "erp_emails")
 @Setter
 @Getter
 public class ErpEmailsDBO implements Serializable{
+
+	private static final long serialVersionUID = -8152571996065229716L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

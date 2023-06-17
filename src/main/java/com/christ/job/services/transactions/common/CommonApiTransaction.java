@@ -53,7 +53,7 @@ public class CommonApiTransaction {
     }
 
     public List<ErpSmsDBO> getMessageList() {
-        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where recordStatus='A' and templateId is not null and smsIsSent=0 ", ErpSmsDBO.class)
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where recordStatus='A' and templateId is not null and smsIsSent=false", ErpSmsDBO.class)
                 .getResultList()).await().indefinitely();
     }
 
@@ -62,8 +62,18 @@ public class CommonApiTransaction {
 //    }
 
     public ErpSmsDBO getsmsDBO() {
-        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO where id=1088", ErpSmsDBO.class)
-                .getSingleResult()).await().indefinitely();
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO bo where bo.id=1087 and bo.smsIsSent=true", ErpSmsDBO.class)
+                .getSingleResultOrNull()).await().indefinitely();
+    }
+
+    public List<Tuple> getSms() {
+        return sessionFactory.withSession(session -> session.createNativeQuery("select bo.recipient_mobile_no from erp_sms bo where bo.sms_is_sent=false", Tuple.class)
+                .getResultList()).await().indefinitely();
+    }
+
+    public List<ErpSmsDBO> getsmsDBOs() {
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO bo where bo.smsIsSent=false and bo.templateId is not null and bo.recordStatus='A'", ErpSmsDBO.class)
+                .getResultList()).await().indefinitely();
     }
 
     public List<ErpNotificationEmailSenderSettingsDBO> getEmailSenderSettings() {
