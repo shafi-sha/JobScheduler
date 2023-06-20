@@ -1,6 +1,7 @@
 package com.christ.job.services.transactions.common;
 
 import com.christ.job.services.dbobjects.common.ErpCampusDBO;
+import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
 import com.christ.job.services.dbobjects.common.ErpNotificationEmailSenderSettingsDBO;
 import com.christ.job.services.dbobjects.common.ErpSmsDBO;
 import jakarta.persistence.Tuple;
@@ -71,8 +72,19 @@ public class CommonApiTransaction {
                 .getResultList()).await().indefinitely();
     }
 
-    public List<ErpSmsDBO> getsmsDBOs() {
-        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO bo where bo.smsIsSent=false and bo.templateId is not null and bo.recordStatus='A'", ErpSmsDBO.class)
+    public List<ErpSmsDBO> getsmsDBOs(String messageStatus) {
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO bo where bo.templateId is not null " +
+                " and (bo.smsIsSent=false or (bo.smsIsSent=true and bo.messageStatus=:messageStatus)) "+
+                " and bo.recordStatus='A'", ErpSmsDBO.class)
+                .setParameter("messageStatus", messageStatus)
+                .getResultList()).await().indefinitely();
+    }
+
+    public List<ErpSmsDBO> getMessageStatusDBOs(String messageStatus) {
+        return sessionFactory.withSession(s->s.createQuery("from ErpSmsDBO bo where bo.smsIsSent=true " +
+                " and bo.messageStatus=:messageStatus "+
+                " and bo.recordStatus='A'", ErpSmsDBO.class)
+                .setParameter("messageStatus", messageStatus)
                 .getResultList()).await().indefinitely();
     }
 
@@ -81,7 +93,26 @@ public class CommonApiTransaction {
                 .getResultList()).await().indefinitely();
     }
 
+    public ErpNotificationEmailSenderSettingsDBO getEmailSenderSettingDBO() {
+        return sessionFactory.withSession(s->s.createQuery("from ErpNotificationEmailSenderSettingsDBO where recordStatus='A' and id=156", ErpNotificationEmailSenderSettingsDBO.class)
+                .getSingleResultOrNull()).await().indefinitely();
+    }
+
     public void updateDBOS(List<Object> dboList) {
         sessionFactory.withTransaction((session, tx) -> session.mergeAll(dboList.toArray())).await().indefinitely();
+    }
+
+    public void updateDBO(Object dbo) {
+        sessionFactory.withTransaction((session, tx) -> session.merge(dbo)).await().indefinitely();
+    }
+
+    public void updateErpEmailsDBO(ErpEmailsDBO erpEmailsDBO) {
+        sessionFactory.withTransaction((session, tx) -> session.merge(erpEmailsDBO)).await().indefinitely();
+    }
+
+    public List<ErpEmailsDBO> getErpEmailsDBOs() {
+        return sessionFactory.withSession(s->s.createQuery("from ErpEmailsDBO bo where bo.emailIsSent=false " +
+                " and bo.erpEntriesDBO=516 and bo.priorityLevelOrder is not null and bo.recordStatus='A'", ErpEmailsDBO.class)
+                .getResultList()).await().indefinitely();
     }
 }

@@ -1,7 +1,7 @@
 package com.christ.job.services.jobs;
 
 import com.christ.job.services.jobNotificationListeners.JobCompletionNotificationListener;
-import com.christ.job.services.tasks.SendingMessageTask;
+import com.christ.job.services.tasks.SendMessageStatusTask;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -13,24 +13,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
-public class SendingMessageJob {
+public class SendMessageStatusJob {
 
     @Autowired
-    private SendingMessageTask sendingMessageTask;
+    private SendMessageStatusTask sendMessageStatusTask;
 
     @Bean
-    public Job sendingMessage(JobRepository jobRepository, PlatformTransactionManager transactionManager, JobCompletionNotificationListener listener) {
-        return new JobBuilder("sendingMessage", jobRepository)
+    public Job sendMessageStatus(JobRepository jobRepository, PlatformTransactionManager transactionManager, JobCompletionNotificationListener listener) {
+        return new JobBuilder("sendMessageStatus", jobRepository)
                 .listener(listener)
-                .flow(sendingMessageStep(jobRepository, transactionManager))
+                .flow(sendMessageStatusStep(jobRepository, transactionManager))
                 .end()
                 .build();
     }
 
     @Bean
-    public Step sendingMessageStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
-        return new StepBuilder("sendingMessageStep", jobRepository)
-                .tasklet(sendingMessageTask, transactionManager)
+    public Step sendMessageStatusStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("sendMessageStatusStep", jobRepository)
+                .tasklet(sendMessageStatusTask, transactionManager)
                 .build();
     }
 }

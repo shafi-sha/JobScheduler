@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.springframework.batch.core.StepContribution;
@@ -42,7 +43,7 @@ public class RefreshMailTokenTask implements Tasklet {
     private CommonApiTransaction transaction;
 
     @Override
-    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+    public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
         setMailRefreshToken();
         return RepeatStatus.FINISHED;
     }
@@ -50,6 +51,9 @@ public class RefreshMailTokenTask implements Tasklet {
     private void setMailRefreshToken() {
         try{
             List<ErpNotificationEmailSenderSettingsDBO> erpNotificationEmailSenderSettingsDBOS = transaction.getEmailSenderSettings();
+            erpNotificationEmailSenderSettingsDBOS.clear();
+            ErpNotificationEmailSenderSettingsDBO notificationEmailSenderSettingsDBO = transaction.getEmailSenderSettingDBO();
+            erpNotificationEmailSenderSettingsDBOS.add(notificationEmailSenderSettingsDBO);
             if(!Utils.isNullOrEmpty(erpNotificationEmailSenderSettingsDBOS)){
                 List<Object> notificationEmailSenderSettingsDBOS = new ArrayList<>();
                 for (ErpNotificationEmailSenderSettingsDBO erpNotificationEmailSenderSettingsDBO : erpNotificationEmailSenderSettingsDBOS) {

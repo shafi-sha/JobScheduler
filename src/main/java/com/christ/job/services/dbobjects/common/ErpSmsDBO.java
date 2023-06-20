@@ -3,6 +3,10 @@ package com.christ.job.services.dbobjects.common;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -44,9 +48,9 @@ public class ErpSmsDBO implements Serializable{
 	@Column(name="sms_subject")
 	private String smsSubject;
 	
-	@Column(name="sms_content",columnDefinition="TEXT")
+	@Column(name="sms_content",columnDefinition="TEXT", length = 1, nullable = false)
 	private String smsContent;
-	
+
 	@Column(name="sms_is_sent")
 	private Boolean smsIsSent;
 
@@ -70,6 +74,9 @@ public class ErpSmsDBO implements Serializable{
 
 	@Column(name="message_status")
 	private String messageStatus;
+
+	@Column(name="sms_transaction_id")
+	private String smsTransactionId;
 
 	@Column(name="created_users_id", updatable = false)
 	private Integer createdUsersId;

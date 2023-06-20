@@ -21,5 +21,6 @@ public class ErpSmsDTO {
     private String messageStatus;
     private String templateId;
     private String gatewayResponse;
+    private String smsTransactionId;
 
 }

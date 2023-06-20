@@ -1,6 +1,6 @@
 package com.christ.job.services.jobs;
 
-import com.christ.job.services.tasks.SendingMailTask;
+import com.christ.job.services.tasks.SendMailTask;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -12,23 +12,23 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
-public class SendingMailJob {
+public class SendMailJob {
 
     @Autowired
-    private SendingMailTask sendingMailTask;
+    private SendMailTask sendMailTask;
 
     @Bean
-    public Job sendingMail(JobRepository jobRepository, PlatformTransactionManager transactionManager){
-        return new JobBuilder("sendingMail", jobRepository)
-                .flow(sendingMailStep(jobRepository, transactionManager))
+    public Job sendMail(JobRepository jobRepository, PlatformTransactionManager transactionManager){
+        return new JobBuilder("sendMail", jobRepository)
+                .flow(sendMailStep(jobRepository, transactionManager))
                 .end()
                 .build();
     }
 
     @Bean
-    public Step sendingMailStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
-        return new StepBuilder("sendingMailStep", jobRepository)
-                .tasklet(sendingMailTask, transactionManager)
+    public Step sendMailStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("sendMailStep", jobRepository)
+                .tasklet(sendMailTask, transactionManager)
                 .build();
     }
 }

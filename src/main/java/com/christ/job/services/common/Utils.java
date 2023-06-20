@@ -332,5 +332,9 @@ public class Utils {
 	 public static String convertLocalDateToStringDate6(LocalDate localDate) {
 	    return localDate.format(DateTimeFormatter.ofPattern("MM/dd/yyyy")); 
 	  }
-  }
+
+	public static LocalDateTime convertStringLocalDateTimeToLocalDateTime(String localDateString) {
+		return LocalDateTime.parse(localDateString, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+	}
+}
 

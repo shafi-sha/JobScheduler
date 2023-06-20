@@ -57,7 +57,7 @@ public class SMSUtils {
 
     public static StringBuffer formatRequest(ErpSmsDTO erpSmsDTO) throws Throwable {
         StringBuffer str = new StringBuffer();
-        str.append(Constants.SMS_FILE_CFG);
+        str.append(Constants.SMS_SEND_URL);
         str.append(getNVP("to", erpSmsDTO.getRecipientMobileNo(), false));
         str.append(getNVP("message", erpSmsDTO.getSmsContent(), true));
         str.append(getNVP("template_id", erpSmsDTO.getTemplateId(), true));
