@@ -3,6 +3,9 @@ package com.christ.job.services.common;
 public enum SysProperties {
     UNIVERSITY_NAME,
     SEND_MAIL,
+
+    SEND_SMS,
     USER_MAILS,
-    MAIL_PASSWORD;
+    MAIL_PASSWORD,
+    ERP_EMAIL;
 }

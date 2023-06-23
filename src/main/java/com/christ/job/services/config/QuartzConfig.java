@@ -2,6 +2,7 @@ package com.christ.job.services.config;
 
 import com.christ.job.services.common.RedisSysPropertiesData;
 import com.christ.job.services.common.SysProperties;
+import jakarta.annotation.PostConstruct;
 import org.quartz.*;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParameters;
@@ -131,7 +132,7 @@ public class QuartzConfig {
                 .forJob(jobThreeDetail())
                 .withIdentity("jobThreeTrigger")
                 //.withSchedule(CronScheduleBuilder.cronSchedule("* 0/2 * * * ?")) //trigger that fire at every 2 minutes
-                .withSchedule(CronScheduleBuilder.cronSchedule("00 35 18 * * ?"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("00 35 22 * * ?"))
                 .build();
     }
 
@@ -141,7 +142,7 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(sendMessageJobDetail())
                 .withIdentity("sendMessageJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("15 10 16 * * ?"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("15 10 20 * * ?"))
                 .build();
     }
 
@@ -151,7 +152,7 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(sendMessageStatusJobDetail())
                 .withIdentity("sendMessageStatusJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("45 10 16 * * ?"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("45 10 21 * * ?"))
                 .build();
     }
 
@@ -161,7 +162,7 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(refreshMailTokenJobDetail())
                 .withIdentity("refreshMailTokenJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("00 54 16 * * ?"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("00 35 10 * * ?"))//0 0/55 * * * ?
                 .build();
     }
 
@@ -171,7 +172,7 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(sendMailJobDetail())
                 .withIdentity("sendMailJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("00 55 08 * * ?"))
+                .withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(15, 48))
                 .build();
     }
 
@@ -185,26 +186,25 @@ public class QuartzConfig {
         scheduler.setQuartzProperties(quartzProperties());
 
 //        if("true".equalsIgnoreCase(redisSysPropertiesData.getSysProperties(SysProperties.SEND_MAIL.name(), null, null))){
-            jobDetailsList.add(jobThreeDetail());
-            triggersList.add(jobThreeTrigger());
-//        }
-//
-//        if("true".equalsIgnoreCase(redisSysPropertiesData.getSysProperties(SysProperties.SEND_MAIL.name(), null, null))){
-//            jobDetailsList.add(jobFourDetail());
-//            triggersList.add(jobFourTrigger());
+//            jobDetailsList.add(jobThreeDetail());
+//            triggersList.add(jobThreeTrigger());
 //        }
 
-        jobDetailsList.add(sendMessageJobDetail());
-        triggersList.add(sendMessageJobTrigger());
+        if("true".equalsIgnoreCase(redisSysPropertiesData.getSysProperties(SysProperties.SEND_MAIL.name(), null, null))){
+            jobDetailsList.add(sendMessageJobDetail());
+            triggersList.add(sendMessageJobTrigger());
 
-        jobDetailsList.add(sendMessageStatusJobDetail());
-        triggersList.add(sendMessageStatusJobTrigger());
+            jobDetailsList.add(sendMessageStatusJobDetail());
+            triggersList.add(sendMessageStatusJobTrigger());
+        }
 
         jobDetailsList.add(refreshMailTokenJobDetail());
         triggersList.add(refreshMailTokenJobTrigger());
 
-        jobDetailsList.add(sendMailJobDetail());
-        triggersList.add(sendMailJobTrigger());
+        if("true".equalsIgnoreCase(redisSysPropertiesData.getSysProperties(SysProperties.SEND_MAIL.name(), null, null))){
+            jobDetailsList.add(sendMailJobDetail());
+            triggersList.add(sendMailJobTrigger());
+        }
 
         /*
         * setting job details for all the jobs

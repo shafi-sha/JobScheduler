@@ -80,10 +80,10 @@ public class SendMailTask implements Tasklet {
                                 }
                                 Constants.LAST_MAIL_SEND_COUNT = count;
                                 System.out.println("LAST_MAIL_SEND_COUNT after: "+ count);
-                                System.out.println("LAST_MAIL_SEND_COUNT after: "+ count);
                                 if (!Utils.isNullOrEmpty(Constants.MAIL_USERNAME)) {
                                     Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, redisSysPropertiesData.getSysProperties(SysProperties.MAIL_PASSWORD.name(), null, null),
-                                            emailSenderMap.get(erpEmailsDBO.getPriorityLevelOrder()).get(Constants.MAIL_USERNAME), erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO);
+                                            emailSenderMap.get(erpEmailsDBO.getPriorityLevelOrder()).get(Constants.MAIL_USERNAME), erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO,
+                                            redisSysPropertiesData, commonApiTransaction);
                                     executorService.execute(mailWorker);
                                     threadCount++;
                                     if(threadCount == Constants.USER_MAILS_1.size()){

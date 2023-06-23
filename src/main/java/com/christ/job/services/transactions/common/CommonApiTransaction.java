@@ -110,6 +110,10 @@ public class CommonApiTransaction {
         sessionFactory.withTransaction((session, tx) -> session.merge(erpEmailsDBO)).await().indefinitely();
     }
 
+    public void saveErpEmailsDBO(ErpEmailsDBO erpEmailsDBO) {
+        sessionFactory.withTransaction((session, tx) -> session.persist(erpEmailsDBO)).await().indefinitely();
+    }
+
     public List<ErpEmailsDBO> getErpEmailsDBOs() {
         return sessionFactory.withSession(s->s.createQuery("from ErpEmailsDBO bo where bo.emailIsSent=false " +
                 " and bo.erpEntriesDBO=516 and bo.priorityLevelOrder is not null and bo.recordStatus='A'", ErpEmailsDBO.class)

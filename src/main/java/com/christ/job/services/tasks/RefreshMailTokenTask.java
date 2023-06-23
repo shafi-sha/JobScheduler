@@ -1,7 +1,10 @@
 package com.christ.job.services.tasks;
 
 import com.christ.job.services.common.Constants;
+import com.christ.job.services.common.RedisSysPropertiesData;
+import com.christ.job.services.common.SysProperties;
 import com.christ.job.services.common.Utils;
+import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
 import com.christ.job.services.dbobjects.common.ErpNotificationEmailSenderSettingsDBO;
 import com.christ.job.services.transactions.common.CommonApiTransaction;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -18,29 +21,22 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.web.util.UriBuilder;
-import org.springframework.web.util.UriBuilderFactory;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class RefreshMailTokenTask implements Tasklet {
 
     @Autowired
-    private CommonApiTransaction transaction;
+    private CommonApiTransaction commonApiTransaction;
+
+    @Autowired
+    private RedisSysPropertiesData redisSysPropertiesData;
 
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
@@ -49,14 +45,17 @@ public class RefreshMailTokenTask implements Tasklet {
     }
 
     private void setMailRefreshToken() {
+        Map<String, String> emailTokenMap = new HashMap<>();
         try{
-            List<ErpNotificationEmailSenderSettingsDBO> erpNotificationEmailSenderSettingsDBOS = transaction.getEmailSenderSettings();
-            erpNotificationEmailSenderSettingsDBOS.clear();
-            ErpNotificationEmailSenderSettingsDBO notificationEmailSenderSettingsDBO = transaction.getEmailSenderSettingDBO();
-            erpNotificationEmailSenderSettingsDBOS.add(notificationEmailSenderSettingsDBO);
+            System.out.println("--------------RefreshMailTokenTask-------------------");
+            List<ErpNotificationEmailSenderSettingsDBO> erpNotificationEmailSenderSettingsDBOS = commonApiTransaction.getEmailSenderSettings();
+            //erpNotificationEmailSenderSettingsDBOS.clear();
+//            ErpNotificationEmailSenderSettingsDBO notificationEmailSenderSettingsDBO = transaction.getEmailSenderSettingDBO();
+//            erpNotificationEmailSenderSettingsDBOS.add(notificationEmailSenderSettingsDBO);
             if(!Utils.isNullOrEmpty(erpNotificationEmailSenderSettingsDBOS)){
                 List<Object> notificationEmailSenderSettingsDBOS = new ArrayList<>();
                 for (ErpNotificationEmailSenderSettingsDBO erpNotificationEmailSenderSettingsDBO : erpNotificationEmailSenderSettingsDBOS) {
+                    emailTokenMap.put(erpNotificationEmailSenderSettingsDBO.getToken(), erpNotificationEmailSenderSettingsDBO.getSenderEmail());
                     String uriString = new DefaultUriBuilderFactory().builder()
                             .queryParam("client_id", URLEncoder.encode(erpNotificationEmailSenderSettingsDBO.getClientId(), "utf-8"))
                             .queryParam("client_secret", URLEncoder.encode(erpNotificationEmailSenderSettingsDBO.getClientSecret(), "utf-8"))
@@ -82,10 +81,33 @@ public class RefreshMailTokenTask implements Tasklet {
                     }
                     notificationEmailSenderSettingsDBOS.add(erpNotificationEmailSenderSettingsDBO);
                 }
-                transaction.updateDBOS(notificationEmailSenderSettingsDBOS);
+                commonApiTransaction.updateDBOS(notificationEmailSenderSettingsDBOS);
             }
         }catch (Exception e){
             e.printStackTrace();
+            if(e.toString().contains("jakarta.mail.MessagingException: 334") || e.toString().contains("334")){
+                //send mail to erp support- recepient mail should be sys_properties
+                String[] exceptionString = e.toString().split(" ");
+                String senderMail = "";
+                for (String word : exceptionString) {
+                    senderMail = String.valueOf(emailTokenMap.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(word)).findFirst());
+                    System.out.println("senderMail(refresh token exc) : "+senderMail);
+                }
+                if(!Utils.isNullOrEmpty(senderMail))
+                    sendIntimationToERP(senderMail);
+            }
         }
+    }
+
+    public synchronized void sendIntimationToERP(String userName){
+        ErpEmailsDBO emailsDBO = new ErpEmailsDBO();
+        emailsDBO.setSenderName("Christ University");
+        emailsDBO.setEmailContent("Refresh token and Token has been expired for email: "+ userName);
+        emailsDBO.setEmailSubject("Refresh Token Expired");
+        emailsDBO.setPriorityLevelOrder(1);
+        emailsDBO.setEmailIsSent(false);
+        emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_EMAIL.name(), null, null));
+        emailsDBO.setRecordStatus('A');
+        commonApiTransaction.saveErpEmailsDBO(emailsDBO);
     }
 }
