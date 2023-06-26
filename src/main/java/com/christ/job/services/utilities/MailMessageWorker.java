@@ -5,8 +5,6 @@ import com.christ.job.services.common.RedisSysPropertiesData;
 import com.christ.job.services.common.SysProperties;
 import com.christ.job.services.common.Utils;
 import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
-import com.christ.job.services.dbobjects.common.ErpNotificationEmailSenderSettingsDBO;
-import com.christ.job.services.dbobjects.common.ErpSmsDBO;
 import com.christ.job.services.transactions.common.CommonApiTransaction;
 import com.sun.mail.smtp.SMTPTransport;
 import com.sun.mail.util.BASE64EncoderStream;
@@ -15,12 +13,9 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class MailMessageWorker implements Runnable{
 
@@ -83,19 +78,19 @@ public class MailMessageWorker implements Runnable{
         return null;
     }
 
-    public synchronized void sendIntimationToERP(String userName){
+    public void sendIntimationToERP(String emailContent, String emailSubject, String senderName, Integer priorityLevelOrder){
         ErpEmailsDBO emailsDBO = new ErpEmailsDBO();
-        emailsDBO.setSenderName("Christ University");
-        emailsDBO.setEmailContent("Token has been expired for email: "+ userName);
-        emailsDBO.setEmailSubject("Token Expired");
-        emailsDBO.setPriorityLevelOrder(1);
+        emailsDBO.setSenderName(senderName);
+        emailsDBO.setEmailContent(emailContent);
+        emailsDBO.setEmailSubject(emailSubject);
+        emailsDBO.setPriorityLevelOrder(priorityLevelOrder);
         emailsDBO.setEmailIsSent(false);
         emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_EMAIL.name(), null, null));
         emailsDBO.setRecordStatus('A');
         commonApiTransaction.saveErpEmailsDBO(emailsDBO);
     }
 
-    public synchronized void updateErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){
+    public void updateErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){
         commonApiTransaction.updateErpEmailsDBO(erpEmailsDBO);
     }
 
@@ -158,12 +153,24 @@ public class MailMessageWorker implements Runnable{
 				System.out.println("Excetption occurs while sending mail frm '" + userName + "' by "+ Thread.currentThread().getName());
 				System.out.println(m.toString());
                 if(m.toString().contains("Daily user sending quota exceeded") || m.toString().contains("550 5.4.5")){
-                    MailMessageWorker.getUserNameByPriorityOrderForEmail(userName, 0, priorityOrderLevel);
                     System.out.println("Email Changed");
-                }else if(m.toString().contains("334") || m.toString().contains("jakarta.mail.MessagingException: 334")){
+                    MailMessageWorker.getUserNameByPriorityOrderForEmail(userName, 0, priorityOrderLevel);
+                    String emailSubject = "Daily user sending quota exceeded";
+                    String senderName = "Christ University";
+                    String emailContent = "Daily user sending quota exceeded for email: "+this.userName;
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel);
+                } else if(m.toString().contains("334") || m.toString().contains("jakarta.mail.MessagingException: 334")){
                     System.out.println("Token expired");
                     //send mail to erp support- recepient mail should be sys_properties
-                    sendIntimationToERP(this.userName);
+                    String emailSubject = "Token Expired";
+                    String senderName = "Christ University";
+                    String emailContent = "Token has been expired for email: "+this.userName;
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel);
+                } else {
+                    String emailSubject = "Email Sending Failed";
+                    String senderName = "Christ University";
+                    String emailContent = "Something went wrong for email: "+this.userName;
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel);
                 }
                 /*System.out.println("--------------------------------------------------------------------------------------------------------");*/
             } catch (Exception e) {

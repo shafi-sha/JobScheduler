@@ -119,4 +119,15 @@ public class CommonApiTransaction {
                 " and bo.erpEntriesDBO=516 and bo.priorityLevelOrder is not null and bo.recordStatus='A'", ErpEmailsDBO.class)
                 .getResultList()).await().indefinitely();
     }
+
+    public String getUserEmail(String propertyName) {
+        String str = "select sys_properties.property_name, sys_properties.property_value, sys_properties.is_common_property, " +
+                " sys_properties_details.erp_campus_id,sys_properties_details.erp_location_id,sys_properties_details.property_detail_value from sys_properties " +
+                " left join sys_properties_details on sys_properties.sys_properties_id = sys_properties_details.sys_properties_id and sys_properties_details.record_status = 'A' " +
+                "  where sys_properties.record_status = 'A'";
+        return sessionFactory.withSession(s->s.createNativeQuery("select bo.property_value from sys_properties bo " +
+                " where bo.property_name=:propertyName and bo.record_status = 'A'", String.class)
+                .setParameter("propertyName", propertyName)
+                .getSingleResultOrNull()).await().indefinitely();
+    }
 }

@@ -260,7 +260,7 @@ public class SMSUtil {
         return erpSmsDBOS;
     }
 
-    public static Object checkMessageStatus(ErpSmsDBO erpSmsDBO) throws Exception{
+    public static ErpSmsDBO checkMessageStatus(ErpSmsDBO erpSmsDBO) throws Exception{
         if(!Utils.isNullOrEmpty(erpSmsDBO.getSmsTransactionId())){
             try {
                 String response = sendRequest(formatSMSStatusCheckURIString(erpSmsDBO.getSmsTransactionId()));

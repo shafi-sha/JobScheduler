@@ -2,6 +2,7 @@ package com.christ.job.services.config;
 
 import com.christ.job.services.common.RedisSysPropertiesData;
 import com.christ.job.services.common.SysProperties;
+import com.christ.job.services.common.Utils;
 import jakarta.annotation.PostConstruct;
 import org.quartz.*;
 import org.springframework.batch.core.JobParameter;
@@ -31,10 +32,10 @@ public class QuartzConfig {
     private JobLocator jobLocator;
 
     @Autowired
-    private JobRegistry jobRegistry;
+    private RedisSysPropertiesData redisSysPropertiesData;
 
     @Autowired
-    private RedisSysPropertiesData redisSysPropertiesData;
+    private JobRegistry jobRegistry;
 
     @Bean
     public JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor(JobRegistry jobRegistry, PlatformTransactionManager transactionManager) {

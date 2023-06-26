@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-//@Order(2)
-@AutoConfigureOrder(2)
 public class RedisSysPropertiesData {
 
     @Autowired
