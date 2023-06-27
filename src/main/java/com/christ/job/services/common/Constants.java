@@ -1,5 +1,10 @@
 package com.christ.job.services.common;
 
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple3;
+import reactor.util.function.Tuple4;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class Constants {
@@ -24,6 +29,12 @@ public class Constants {
     public static Map<Integer, LinkedList<String>> USER_MAILS_1 = new LinkedHashMap<>();
 
     public static Map<Integer, LinkedList<String>> USER_MAILS_2 = new LinkedHashMap<>();
+
+    public static Map<Integer, LinkedList<Tuple4<String, String, Boolean, LocalDateTime>>> PRIORITY_MAILS_STATUS = new LinkedHashMap<>(); //priority level, { emailId, exceptionName, emailSentFlag, exceptionOccuredDate }
+
+    public static Map<Integer, LinkedList<String>> PRIORITY_MAILS = new LinkedHashMap<>();
+
+    public static Map<Integer, Map<String, String>> PRIORITY_MAILS_TOKEN = new LinkedHashMap<>();
 
     public static String MAIL_USERNAME = "";
 

@@ -13,7 +13,12 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple3;
+import reactor.util.function.Tuple4;
+import reactor.util.function.Tuples;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -53,24 +58,43 @@ public class MailMessageWorker implements Runnable{
         this.commonApiTransaction = commonApiTransaction;
     }
 
+//    public static synchronized String getUserNameByPriorityOrderForEmail(String userName, int count, Integer priorityOrderLevel){
+//        try{
+//            if(Utils.isNullOrEmpty(userName)){
+//                System.out.println("getUserNameByPriorityOrderForEmail USER_MAILS_1 : " + Constants.USER_MAILS_1);
+//                String senderMail = Constants.USER_MAILS_1.get(priorityOrderLevel).get(count);
+//                System.out.println("getUserNameByPriorityOrderForEmail count : " + count + " , senderMail : "+ senderMail);
+//                return senderMail;
+//            }else{
+//                System.out.println("set next sender mail to user mails1 map when quota limit exceeds");
+//                if(!Utils.isNullOrEmpty(Constants.USER_MAILS_2) && Constants.USER_MAILS_1.get(priorityOrderLevel).contains(userName)){
+//                    Constants.USER_MAILS_1.get(priorityOrderLevel).set(Constants.USER_MAILS_1.get(priorityOrderLevel).indexOf(userName), Constants.USER_MAILS_2.get(priorityOrderLevel).remove(0));
+//                    Constants.USER_MAILS_2.get(priorityOrderLevel).add(userName);
+//                }
+//            }
+//        }catch(Exception e){
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
+
     public static synchronized String getUserNameByPriorityOrderForEmail(String userName, int count, Integer priorityOrderLevel){
         try{
-            if(Utils.isNullOrEmpty(userName)){
-//                Set<String> userMails = new HashSet<>(Arrays.asList(redisSysPropertiesData.getSysProperties(SysProperties.USER_MAILS.name(), null, null).split(",")));
-//                LinkedList<String> userEmailsByPriorityList = (LinkedList<String>) emailSenderMap.get(priorityOrderLevel).keySet().stream().filter(userMails::contains).toList();
-//                return userEmailsByPriorityList.get(count);
-                System.out.println("getUserNameByPriorityOrderForEmail USER_MAILS_1 : " + Constants.USER_MAILS_1);
-                String senderMail = Constants.USER_MAILS_1.get(priorityOrderLevel).get(count);
-                System.out.println("getUserNameByPriorityOrderForEmail count : " + count + " , senderMail : "+ senderMail);
-                return senderMail;
-            }else{
-                System.out.println("set next sender mail to user mails1 map when quota limit exceeds");
-                if(!Utils.isNullOrEmpty(Constants.USER_MAILS_2) && Constants.USER_MAILS_1.get(priorityOrderLevel).contains(userName)){
-                    Constants.USER_MAILS_1.get(priorityOrderLevel).set(Constants.USER_MAILS_1.get(priorityOrderLevel).indexOf(userName), Constants.USER_MAILS_2.get(priorityOrderLevel).remove(0));
-                    Constants.USER_MAILS_2.get(priorityOrderLevel).add(userName);
-//                    Constants.USER_MAILS_1.set((Constants.USER_MAILS_1.indexOf(userName)), Constants.USER_MAILS_2.remove(0));
-//                    Constants.USER_MAILS_2.add(userName);
+            Tuple4<String, String, Boolean, LocalDateTime> tuple = Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).get(count);
+            if(Utils.isNullOrEmpty(tuple.getT2())){//checking if exception is occured before for this specific email id
+                return tuple.getT1();
+            } else {
+                if(!tuple.getT3()){//boolean for indicating mail send to erpsupport regarding the exception occured for this specific email id
+                    //send intimation email to erp support
+                } else {
+                    Duration duration = Duration.between(tuple.getT4(), LocalDateTime.now());
+                    if(duration.toDays() >= 1) {
+                        Tuple4<String, String, Boolean, LocalDateTime> modifiedTuple = Tuples.of(tuple.getT1(), "", false, LocalDateTime.now());
+                        Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).set(count, modifiedTuple);
+                    }
                 }
+                count += 1;
+                return Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).get(count).getT1(); //next email id
             }
         }catch(Exception e){
             e.printStackTrace();
@@ -78,7 +102,7 @@ public class MailMessageWorker implements Runnable{
         return null;
     }
 
-    public void sendIntimationToERP(String emailContent, String emailSubject, String senderName, Integer priorityLevelOrder){
+    public void sendIntimationToERP(String emailContent, String emailSubject, String senderName, Integer priorityLevelOrder, String userName, String exceptionName){
         ErpEmailsDBO emailsDBO = new ErpEmailsDBO();
         emailsDBO.setSenderName(senderName);
         emailsDBO.setEmailContent(emailContent);
@@ -88,6 +112,12 @@ public class MailMessageWorker implements Runnable{
         emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_EMAIL.name(), null, null));
         emailsDBO.setRecordStatus('A');
         commonApiTransaction.saveErpEmailsDBO(emailsDBO);
+
+        Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).forEach(tuple -> {
+            if(tuple.getT1().equalsIgnoreCase(userName)){
+                tuple = Tuples.of(tuple.getT1(), exceptionName, true, LocalDateTime.now());
+            }
+        });
     }
 
     public void updateErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){
@@ -158,19 +188,19 @@ public class MailMessageWorker implements Runnable{
                     String emailSubject = "Daily user sending quota exceeded";
                     String senderName = "Christ University";
                     String emailContent = "Daily user sending quota exceeded for email: "+this.userName;
-                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel);
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "daily quota exceeded");
                 } else if(m.toString().contains("334") || m.toString().contains("jakarta.mail.MessagingException: 334")){
                     System.out.println("Token expired");
                     //send mail to erp support- recepient mail should be sys_properties
                     String emailSubject = "Token Expired";
                     String senderName = "Christ University";
                     String emailContent = "Token has been expired for email: "+this.userName;
-                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel);
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "token expired");
                 } else {
                     String emailSubject = "Email Sending Failed";
                     String senderName = "Christ University";
                     String emailContent = "Something went wrong for email: "+this.userName;
-                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel);
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "something went wrong");
                 }
                 /*System.out.println("--------------------------------------------------------------------------------------------------------");*/
             } catch (Exception e) {
