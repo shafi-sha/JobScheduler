@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.util.function.Tuple2;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,28 +53,30 @@ public class SendMailTask implements Tasklet {
                 Map<Integer, Map<String, String>> emailSenderMap = erpNotificationEmailSenderSettingsDBOList.stream()
                         .collect(Collectors.groupingBy(ErpNotificationEmailSenderSettingsDBO::getPriorityLevelOrder, Collectors.toMap(ErpNotificationEmailSenderSettingsDBO::getSenderEmail, ErpNotificationEmailSenderSettingsDBO::getToken)));
                 Constants.SEND_MAIL_COUNT = 1;
-                String userMails = redisSysPropertiesData.getSysProperties(SysProperties.USER_MAILS.name(), null, null);
-                System.out.println("userMails : " + userMails);
-                String[] userEmails;
-                if(!Utils.isNullOrEmpty(userMails)){
-                    userEmails = userMails.split(",");
-                }
                 List<ErpEmailsDBO> erpEmailsDBOS = commonApiTransaction.getErpEmailsDBOs();
+                List<Object> erpEmailsDBOList = new ArrayList<>();
                 if(!Utils.isNullOrEmpty(erpEmailsDBOS)){
                     int count = Constants.LAST_MAIL_SEND_COUNT;
+                    int mailSendCount = 1;
                     System.out.println("----------------------------");
+                    System.out.println("recipient emails size : " + erpEmailsDBOS.size());
                     System.out.println("LAST_MAIL_SEND_COUNT before: "+ count);
-                    ExecutorService executorService = Executors.newFixedThreadPool(4);
+                    int priorityMailsSize = emailSenderMap.get(2).size();
+                    System.out.println("priorityMailsSize size : "+ priorityMailsSize);
+                    ExecutorService executorService = Executors.newFixedThreadPool(priorityMailsSize);
                     int threadCount = 0;
                     for (ErpEmailsDBO erpEmailsDBO : erpEmailsDBOS) {
                         try{
                             if(!Utils.isNullOrEmpty(erpEmailsDBO.getRecipientEmail())){
-                                Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmail(null, count, erpEmailsDBO.getPriorityLevelOrder());
+                                System.out.println("-------------mail "+mailSendCount+ " : " + erpEmailsDBO.getRecipientEmail() +" ---------------");
+                                erpEmailsDBO.setEmailContent(erpEmailsDBO.getEmailContent() + " mailSendCount : " + mailSendCount);
+                                mailSendCount++;
+                                Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmail(count, erpEmailsDBO.getPriorityLevelOrder());
+                                String token = emailSenderMap.get(erpEmailsDBO.getPriorityLevelOrder()).get(Constants.MAIL_USERNAME);
+                                System.out.println("threadCount : "+ threadCount);
                                 System.out.println("MAIL_USERNAME : "+ Constants.MAIL_USERNAME);
-                                System.out.println("MAIL_PASSWORD: "+ redisSysPropertiesData.getSysProperties(SysProperties.MAIL_PASSWORD.name(), null, null));
-                                System.out.println("Token : "+ emailSenderMap.get(erpEmailsDBO.getPriorityLevelOrder()).get(Constants.MAIL_USERNAME));
-                                System.out.println("USER_MAILS_1 size : "+ Constants.USER_MAILS_1.size());
-                                if (count == (Constants.USER_MAILS_1.size() - 1)) {
+                                System.out.println("Token : "+ token);
+                                if (count == (priorityMailsSize - 1)) {
                                     count = 0;
                                 } else {
                                     count++;
@@ -81,29 +84,31 @@ public class SendMailTask implements Tasklet {
                                 Constants.LAST_MAIL_SEND_COUNT = count;
                                 System.out.println("LAST_MAIL_SEND_COUNT after: "+ count);
                                 if (!Utils.isNullOrEmpty(Constants.MAIL_USERNAME)) {
-                                    Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, redisSysPropertiesData.getSysProperties(SysProperties.MAIL_PASSWORD.name(), null, null),
-                                            emailSenderMap.get(erpEmailsDBO.getPriorityLevelOrder()).get(Constants.MAIL_USERNAME), erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO,
-                                            redisSysPropertiesData, commonApiTransaction);
+                                    //Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, token, erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO, redisSysPropertiesData, commonApiTransaction);
+                                    Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, token, erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO, erpEmailsDBOList);
                                     executorService.execute(mailWorker);
+                                    //System.out.println("EmailIsSent : "+erpEmailsDBO.getEmailIsSent());
+                                    //erpEmailsDBOList.add(erpEmailsDBO);
                                     threadCount++;
-                                    if(threadCount == Constants.USER_MAILS_1.size()){
+                                    if(threadCount == (priorityMailsSize - 1)){
                                         threadCount = 0;
                                         Thread.sleep(5000);
                                     }
                                 }
                             }
+                            System.out.println("----------------------------");
                         }catch (Exception e){
                             e.printStackTrace();
                             System.out.println("Exception");
                         }
                     }
                     executorService.shutdown();
-                    executorService.awaitTermination(60, TimeUnit.SECONDS);
+                    commonApiTransaction.updateDBOS(erpEmailsDBOList);
                 }
             }
         }catch (Exception e){
             e.printStackTrace();
-            System.out.println("Exception");
+            System.out.println("Exception : "+e.getMessage());
         }
         Constants.SEND_MAIL_COUNT = 0;
     }

@@ -17,26 +17,26 @@ public class RedisSysPropertiesData {
     @Autowired
     CommonApiTransaction commonApiTransaction;
 
-    @PostConstruct
+    //@PostConstruct
     public void setERPPropertiesDataToRedis() {
         System.out.println("order2 RedisSysPropertiesData");
-//        CacheUtils.instance.clearMap("__PROPERTY_MAP_");
-//        List<Tuple> erpProperties = commonApiTransaction.getERPProperties();
-//        if(!Utils.isNullOrEmpty(erpProperties)){
-//            System.out.println("data for redis");
-//            for(Tuple tuple : erpProperties){
-//                if(!Utils.isNullOrEmpty(tuple.get("is_common_property")) && tuple.get("is_common_property").toString().equals("1")) {
-//                    CacheUtils.instance.set("__PROPERTY_MAP_", "_G_"+ tuple.get("property_name").toString(), tuple.get("property_value").toString());
-//                } else {
-//                    if(!Utils.isNullOrEmpty(tuple.get("erp_location_id"))) {
-//                        CacheUtils.instance.set("__PROPERTY_MAP_",tuple.get("erp_location_id").toString()+"_L_"+ tuple.get("property_name").toString(),tuple.get("property_detail_value").toString());
-//                    }
-//                    else if(!Utils.isNullOrEmpty(tuple.get("erp_campus_id"))) {
-//                        CacheUtils.instance.set("__PROPERTY_MAP_", tuple.get("erp_campus_id").toString()+"_C_"+tuple.get("property_name").toString(),tuple.get("property_detail_value").toString());
-//                    }
-//                }
-//            }
-//        }
+        CacheUtils.instance.clearMap("__PROPERTY_MAP_");
+        List<Tuple> erpProperties = commonApiTransaction.getERPProperties();
+        if(!Utils.isNullOrEmpty(erpProperties)){
+            System.out.println("data for redis");
+            for(Tuple tuple : erpProperties){
+                if(!Utils.isNullOrEmpty(tuple.get("is_common_property")) && tuple.get("is_common_property").toString().equals("1")) {
+                    CacheUtils.instance.set("__PROPERTY_MAP_", "_G_"+ tuple.get("property_name").toString(), tuple.get("property_value").toString());
+                } else {
+                    if(!Utils.isNullOrEmpty(tuple.get("erp_location_id"))) {
+                        CacheUtils.instance.set("__PROPERTY_MAP_",tuple.get("erp_location_id").toString()+"_L_"+ tuple.get("property_name").toString(),tuple.get("property_detail_value").toString());
+                    }
+                    else if(!Utils.isNullOrEmpty(tuple.get("erp_campus_id"))) {
+                        CacheUtils.instance.set("__PROPERTY_MAP_", tuple.get("erp_campus_id").toString()+"_C_"+tuple.get("property_name").toString(),tuple.get("property_detail_value").toString());
+                    }
+                }
+            }
+        }
     }
 
     public String getSysProperties(String propertyName, String lc, Integer lcID) {

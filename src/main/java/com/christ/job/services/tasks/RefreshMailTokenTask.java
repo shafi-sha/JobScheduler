@@ -90,8 +90,12 @@ public class RefreshMailTokenTask implements Tasklet {
                 String[] exceptionString = e.toString().split(" ");
                 String senderMail = "";
                 for (String word : exceptionString) {
-                    senderMail = String.valueOf(emailTokenMap.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(word)).findFirst());
-                    System.out.println("senderMail(refresh token exc) : "+senderMail);
+                    //senderMail = String.valueOf(emailTokenMap.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(word)).findFirst());
+                    senderMail = String.valueOf(emailTokenMap.keySet().stream().filter(s -> s.equalsIgnoreCase(word)).findFirst());
+                    if(!Utils.isNullOrEmpty(senderMail)){
+                        System.out.println("senderMail(refresh token exc) : "+senderMail);
+                        break;
+                    }
                 }
                 if(!Utils.isNullOrEmpty(senderMail))
                     sendIntimationToERP(senderMail);
@@ -102,9 +106,9 @@ public class RefreshMailTokenTask implements Tasklet {
     public synchronized void sendIntimationToERP(String userName){
         ErpEmailsDBO emailsDBO = new ErpEmailsDBO();
         emailsDBO.setSenderName("Christ University");
-        emailsDBO.setEmailContent("Refresh token and Token has been expired for email: "+ userName);
+        emailsDBO.setEmailContent("Refresh token and Token has been expired for emailId: "+ userName);
         emailsDBO.setEmailSubject("Refresh Token Expired");
-        emailsDBO.setPriorityLevelOrder(1);
+        emailsDBO.setPriorityLevelOrder(2);
         emailsDBO.setEmailIsSent(false);
         emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_EMAIL.name(), null, null));
         emailsDBO.setRecordStatus('A');

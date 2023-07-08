@@ -38,19 +38,19 @@ public class HibernateConfig {
         return dataSource;
     }
 
-    @Bean(name="secondaryDS")
-    @BatchDataSource
-    public DriverManagerDataSource batchDataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setUsername("Dev_Erp");
-        dataSource.setPassword("Tut06!l$2019");
-        dataSource.setUrl("jdbc:mysql://10.5.13.52:3306/JOB_SCHEDULER");
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        return dataSource;
-    }
+//    @Bean(name="secondaryDS")
+//    @BatchDataSource
+//    public DriverManagerDataSource batchDataSource() {
+//        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+//        dataSource.setUsername("Dev_Erp");
+//        dataSource.setPassword("Tut06!l$2019");
+//        dataSource.setUrl("jdbc:mysql://10.5.13.52:3306/JOB_SCHEDULER");
+//        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+//        return dataSource;
+//    }
 
     @Bean
-    @Primary
+    //@Primary
     public PlatformTransactionManager hibernateTransactionManager() {
         final HibernateTransactionManager transactionManager = new HibernateTransactionManager();
         transactionManager.setSessionFactory(sessionFactory().getObject());

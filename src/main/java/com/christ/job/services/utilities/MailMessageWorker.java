@@ -5,14 +5,20 @@ import com.christ.job.services.common.RedisSysPropertiesData;
 import com.christ.job.services.common.SysProperties;
 import com.christ.job.services.common.Utils;
 import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
+import com.christ.job.services.handler.CommonApiHandler;
 import com.christ.job.services.transactions.common.CommonApiTransaction;
 import com.sun.mail.smtp.SMTPTransport;
 import com.sun.mail.util.BASE64EncoderStream;
+import io.smallrye.mutiny.Uni;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import org.hibernate.reactive.mutiny.Mutiny;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
@@ -25,37 +31,34 @@ import java.util.*;
 public class MailMessageWorker implements Runnable{
 
     private String userName;
-    private String password;
     private String token;
     private ErpEmailsDBO erpEmailsDBO;
 
     private Integer priorityOrderLevel;
 
+    private List<Object> erpEmailsDBOList = new ArrayList<>();
+
     private RedisSysPropertiesData redisSysPropertiesData;
+
+    @Autowired
+    private Mutiny.SessionFactory sessionFactory;
 
     //private static CommonApiTransaction commonApiTransaction;
 
-    private CommonApiTransaction commonApiTransaction;
 
 //    @Autowired
 //    private MailMessageWorker(RedisSysPropertiesData redisSysPropertiesData) {
 //        MailMessageWorker.redisSysPropertiesData = redisSysPropertiesData;
 //    }
 
-//    @Autowired
-//    private MailMessageWorker(CommonApiTransaction commonApiTransaction) {
-//        MailMessageWorker.commonApiTransaction = commonApiTransaction;
-//    }
-
-    public MailMessageWorker(String userName, String password,String token, Integer priorityOrderLevel, ErpEmailsDBO erpEmailsDBO,
-             RedisSysPropertiesData redisSysPropertiesData, CommonApiTransaction commonApiTransaction) {
+    public MailMessageWorker(String userName, String token, Integer priorityOrderLevel, ErpEmailsDBO erpEmailsDBO, List<Object> erpEmailsDBOList) {
         this.userName = userName;
-        this.password = password;
         this.token = token;
         this.priorityOrderLevel = priorityOrderLevel;
         this.erpEmailsDBO = erpEmailsDBO;
-        this.redisSysPropertiesData = redisSysPropertiesData;
-        this.commonApiTransaction = commonApiTransaction;
+        this.erpEmailsDBOList = erpEmailsDBOList;
+        //this.redisSysPropertiesData = redisSysPropertiesData;
+        //this.commonApiTransaction = commonApiTransaction;
     }
 
 //    public static synchronized String getUserNameByPriorityOrderForEmail(String userName, int count, Integer priorityOrderLevel){
@@ -78,7 +81,7 @@ public class MailMessageWorker implements Runnable{
 //        return null;
 //    }
 
-    public static synchronized String getUserNameByPriorityOrderForEmail(String userName, int count, Integer priorityOrderLevel){
+    public static synchronized String getUserNameByPriorityOrderForEmail(int count, Integer priorityOrderLevel){
         try{
             Tuple4<String, String, Boolean, LocalDateTime> tuple = Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).get(count);
             if(Utils.isNullOrEmpty(tuple.getT2())){//checking if exception is occured before for this specific email id
@@ -111,7 +114,8 @@ public class MailMessageWorker implements Runnable{
         emailsDBO.setEmailIsSent(false);
         emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_EMAIL.name(), null, null));
         emailsDBO.setRecordStatus('A');
-        commonApiTransaction.saveErpEmailsDBO(emailsDBO);
+        //commonApiTransaction.saveErpEmailsDBO(emailsDBO);
+        CommonApiTransaction.getInstance().saveErpEmailsDBO(emailsDBO);
 
         Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).forEach(tuple -> {
             if(tuple.getT1().equalsIgnoreCase(userName)){
@@ -121,12 +125,17 @@ public class MailMessageWorker implements Runnable{
     }
 
     public void updateErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){
-        commonApiTransaction.updateErpEmailsDBO(erpEmailsDBO);
+        //commonApiTransaction.updateErpEmailsDBO(erpEmailsDBO);
+        //sessionFactory.withTransaction((session, tx) -> session.merge(erpEmailsDBO)).subscribeAsCompletionStage();
+//        Mutiny.SessionFactory sf = Mutiny.
+//        Mutiny.Session session = (Mutiny.Session) sessionFactory.openSession();
+        sessionFactory.withTransaction((s, tx) -> s.merge(erpEmailsDBO)).subscribeAsCompletionStage();
+        //CommonApiTransaction.getInstance().updateErpEmailsDBO(erpEmailsDBO);
     }
 
     @Override
     public void run() {
-        if(!Utils.isNullOrEmpty(userName) && !Utils.isNullOrEmpty(password) && !Utils.isNullOrEmpty(erpEmailsDBO)){
+        if(!Utils.isNullOrEmpty(userName) && !Utils.isNullOrEmpty(erpEmailsDBO)){
             SMTPTransport transport = null;
             Session session = null;
             try{
@@ -136,38 +145,33 @@ public class MailMessageWorker implements Runnable{
                 props.put("mail.smtp.starttls.enable", "true");
                 session = Session.getDefaultInstance(props);
                 if(!Utils.isNullOrEmpty(session)){
-                    String[] recipients = erpEmailsDBO.getRecipientEmail().split(",");
-                    int countMembers = 0;
-                    for (String recipient : recipients) {
-                        if(Utils.isValidEmail(recipient)){
-                            MimeMessage message = new MimeMessage(session);
-                            InternetAddress from = new InternetAddress(userName, erpEmailsDBO.getSenderName());
-                            InternetAddress to = new InternetAddress(recipient);
-                            message.setFrom(from);
-                            message.addRecipient(Message.RecipientType.TO, to);
-                            message.setSubject(erpEmailsDBO.getEmailSubject());
-                            MimeMultipart mimeMultipart = new MimeMultipart();
-                            MimeBodyPart mimeBodyPart = new MimeBodyPart();
-                            mimeBodyPart.setContent(erpEmailsDBO.getEmailContent(), "text/html");
-                            mimeMultipart.addBodyPart(mimeBodyPart);
-                            message.setContent(mimeMultipart);
-                            transport = new SMTPTransport(session, null);
-                            transport.connect("smtp.gmail.com", this.userName, null);
-                            transport.issueCommand("AUTH XOAUTH2 " + new String(BASE64EncoderStream.encode(String.format("user=%s\1auth=Bearer %s\1\1", this.userName, this.token ).getBytes())), 235);
-                            if(transport.isConnected()){
-                                transport.sendMessage(message, message.getRecipients(Message.RecipientType.TO));
-                            }
-                            countMembers++;
+                    String recipientEmail = erpEmailsDBO.getRecipientEmail();
+                    if(Utils.isValidEmail(recipientEmail)){
+                        MimeMessage message = new MimeMessage(session);
+                        InternetAddress from = new InternetAddress(userName, !Utils.isNullOrEmpty(erpEmailsDBO.getSenderName()) ? erpEmailsDBO.getSenderName() : "Christ University");
+                        InternetAddress to = new InternetAddress(recipientEmail);
+                        message.setFrom(from);
+                        message.addRecipient(Message.RecipientType.TO, to);
+                        message.setSubject(erpEmailsDBO.getEmailSubject());
+                        MimeMultipart mimeMultipart = new MimeMultipart();
+                        MimeBodyPart mimeBodyPart = new MimeBodyPart();
+                        mimeBodyPart.setContent(erpEmailsDBO.getEmailContent(), "text/html");
+                        mimeMultipart.addBodyPart(mimeBodyPart);
+                        message.setContent(mimeMultipart);
+                        transport = new SMTPTransport(session, null);
+                        transport.connect("smtp.gmail.com", this.userName, null);
+                        transport.issueCommand("AUTH XOAUTH2 " + new String(BASE64EncoderStream.encode(String.format("user=%s\1auth=Bearer %s\1\1", this.userName, this.token ).getBytes())), 235);
+                        if(transport.isConnected()){
+                            transport.sendMessage(message, message.getRecipients(Message.RecipientType.TO));
                         }
-                    }
-                    if (recipients.length == countMembers) {
-                        if (transport != null) {
-                            transport.close();
-                        }
+                        transport.close();
                         erpEmailsDBO.setEmailIsSent(true);
                         erpEmailsDBO.setEmailSentTime(LocalDateTime.now());
+                        erpEmailsDBOList.add(erpEmailsDBO);
+                        //CommonApiTransaction.getInstance().updateErpEmailsDBO(erpEmailsDBO);
                         //commonApiTransaction.updateErpEmailsDBO(erpEmailsDBO);
-                        updateErpEmailsDBO(erpEmailsDBO);
+                        //CommonApiHandler.getInstance().updateErpEmailsDBO(erpEmailsDBO);
+                        //updateErpEmailsDBO(erpEmailsDBO);
                     }
                 }
             }catch (MessagingException m) {
@@ -184,7 +188,7 @@ public class MailMessageWorker implements Runnable{
 				System.out.println(m.toString());
                 if(m.toString().contains("Daily user sending quota exceeded") || m.toString().contains("550 5.4.5")){
                     System.out.println("Email Changed");
-                    MailMessageWorker.getUserNameByPriorityOrderForEmail(userName, 0, priorityOrderLevel);
+                    //MailMessageWorker.getUserNameByPriorityOrderForEmail(userName, 0, priorityOrderLevel);
                     String emailSubject = "Daily user sending quota exceeded";
                     String senderName = "Christ University";
                     String emailContent = "Daily user sending quota exceeded for email: "+this.userName;
@@ -197,12 +201,13 @@ public class MailMessageWorker implements Runnable{
                     String emailContent = "Token has been expired for email: "+this.userName;
                     sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "token expired");
                 } else {
+                    System.out.println("Email Sending Failed");
                     String emailSubject = "Email Sending Failed";
                     String senderName = "Christ University";
                     String emailContent = "Something went wrong for email: "+this.userName;
                     sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "something went wrong");
                 }
-                /*System.out.println("--------------------------------------------------------------------------------------------------------");*/
+                System.out.println("--------------------------------------------------------------------------------------------------------");
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -213,7 +218,6 @@ public class MailMessageWorker implements Runnable{
                         e.printStackTrace();
                     }
                 }
-                session = null;
             }
         }
     }

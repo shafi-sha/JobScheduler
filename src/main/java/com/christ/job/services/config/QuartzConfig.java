@@ -38,7 +38,7 @@ public class QuartzConfig {
     private JobRegistry jobRegistry;
 
     @Bean
-    public JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor(JobRegistry jobRegistry, PlatformTransactionManager transactionManager) {
+    public static JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor(JobRegistry jobRegistry, PlatformTransactionManager transactionManager) {
         JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor = new JobRegistryBeanPostProcessor();
         jobRegistryBeanPostProcessor.setJobRegistry(jobRegistry);
         return jobRegistryBeanPostProcessor;
@@ -159,11 +159,12 @@ public class QuartzConfig {
 
     @Bean
     public Trigger refreshMailTokenJobTrigger() {
+        System.out.println("triggering refreshMailTokenJobTrigger");
         return TriggerBuilder
                 .newTrigger()
                 .forJob(refreshMailTokenJobDetail())
                 .withIdentity("refreshMailTokenJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("00 35 10 * * ?"))//0 0/55 * * * ?
+                .withSchedule(CronScheduleBuilder.cronSchedule("0 05 * ? * *"))//0 0/55 * * * ?  // 0 55 * ? * *
                 .build();
     }
 
@@ -173,7 +174,8 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(sendMailJobDetail())
                 .withIdentity("sendMailJobTrigger")
-                .withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(15, 48))
+                //.withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(15, 48))
+                .withSchedule(CronScheduleBuilder.cronSchedule("30 24 13 * * ?"))
                 .build();
     }
 
@@ -190,22 +192,13 @@ public class QuartzConfig {
 //            jobDetailsList.add(jobThreeDetail());
 //            triggersList.add(jobThreeTrigger());
 //        }
-
-        if("true".equalsIgnoreCase(redisSysPropertiesData.getSysProperties(SysProperties.SEND_MAIL.name(), null, null))){
-            jobDetailsList.add(sendMessageJobDetail());
-            triggersList.add(sendMessageJobTrigger());
-
-            jobDetailsList.add(sendMessageStatusJobDetail());
-            triggersList.add(sendMessageStatusJobTrigger());
-        }
-
-        jobDetailsList.add(refreshMailTokenJobDetail());
-        triggersList.add(refreshMailTokenJobTrigger());
-
-        if("true".equalsIgnoreCase(redisSysPropertiesData.getSysProperties(SysProperties.SEND_MAIL.name(), null, null))){
+//
+//        if("true".equalsIgnoreCase(redisSysPropertiesData.getSysProperties(SysProperties.SEND_MAIL.name(), null, null))){
             jobDetailsList.add(sendMailJobDetail());
             triggersList.add(sendMailJobTrigger());
-        }
+//        }
+//        jobDetailsList.add(refreshMailTokenJobDetail());
+//        triggersList.add(refreshMailTokenJobTrigger());
 
         /*
         * setting job details for all the jobs

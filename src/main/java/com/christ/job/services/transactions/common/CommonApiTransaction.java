@@ -4,6 +4,8 @@ import com.christ.job.services.dbobjects.common.ErpCampusDBO;
 import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
 import com.christ.job.services.dbobjects.common.ErpNotificationEmailSenderSettingsDBO;
 import com.christ.job.services.dbobjects.common.ErpSmsDBO;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 import jakarta.persistence.Tuple;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,15 @@ import java.util.List;
 
 @Repository
 public class CommonApiTransaction {
+
+    private static volatile CommonApiTransaction CommonApiTransaction = null;
+
+    public static CommonApiTransaction getInstance() {
+        if(CommonApiTransaction==null) {
+            CommonApiTransaction = new CommonApiTransaction();
+        }
+        return CommonApiTransaction;
+    }
 
     @Autowired
     private Mutiny.SessionFactory sessionFactory;
@@ -99,32 +110,29 @@ public class CommonApiTransaction {
     }
 
     public void updateDBOS(List<Object> dboList) {
-        sessionFactory.withTransaction((session, tx) -> session.mergeAll(dboList.toArray())).await().indefinitely();
+        sessionFactory.withTransaction((session, tx) -> session.mergeAll(dboList.toArray())).subscribeAsCompletionStage();
     }
 
     public void updateDBO(Object dbo) {
-        sessionFactory.withTransaction((session, tx) -> session.merge(dbo)).await().indefinitely();
+        sessionFactory.withTransaction((session, tx) -> session.merge(dbo)).subscribeAsCompletionStage();
     }
 
     public void updateErpEmailsDBO(ErpEmailsDBO erpEmailsDBO) {
-        sessionFactory.withTransaction((session, tx) -> session.merge(erpEmailsDBO)).await().indefinitely();
+        sessionFactory.withTransaction((session, tx) -> session.merge(erpEmailsDBO)).subscribeAsCompletionStage();
     }
 
     public void saveErpEmailsDBO(ErpEmailsDBO erpEmailsDBO) {
-        sessionFactory.withTransaction((session, tx) -> session.persist(erpEmailsDBO)).await().indefinitely();
+        //sessionFactory.withTransaction((session, tx) -> session.persist(erpEmailsDBO)).await().indefinitely();
+        sessionFactory.withTransaction((session, tx) -> session.persist(erpEmailsDBO)).subscribeAsCompletionStage();
     }
 
     public List<ErpEmailsDBO> getErpEmailsDBOs() {
         return sessionFactory.withSession(s->s.createQuery("from ErpEmailsDBO bo where bo.emailIsSent=false " +
-                " and bo.erpEntriesDBO=516 and bo.priorityLevelOrder is not null and bo.recordStatus='A'", ErpEmailsDBO.class)
+                " and bo.recipientEmail='shafi9567151934@gmail.com' and bo.priorityLevelOrder is not null and bo.recordStatus='A'", ErpEmailsDBO.class)
                 .getResultList()).await().indefinitely();
     }
 
     public String getUserEmail(String propertyName) {
-        String str = "select sys_properties.property_name, sys_properties.property_value, sys_properties.is_common_property, " +
-                " sys_properties_details.erp_campus_id,sys_properties_details.erp_location_id,sys_properties_details.property_detail_value from sys_properties " +
-                " left join sys_properties_details on sys_properties.sys_properties_id = sys_properties_details.sys_properties_id and sys_properties_details.record_status = 'A' " +
-                "  where sys_properties.record_status = 'A'";
         return sessionFactory.withSession(s->s.createNativeQuery("select bo.property_value from sys_properties bo " +
                 " where bo.property_name=:propertyName and bo.record_status = 'A'", String.class)
                 .setParameter("propertyName", propertyName)
