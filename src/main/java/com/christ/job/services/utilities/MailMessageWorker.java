@@ -5,22 +5,14 @@ import com.christ.job.services.common.RedisSysPropertiesData;
 import com.christ.job.services.common.SysProperties;
 import com.christ.job.services.common.Utils;
 import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
-import com.christ.job.services.handler.CommonApiHandler;
-import com.christ.job.services.transactions.common.CommonApiTransaction;
 import com.sun.mail.smtp.SMTPTransport;
 import com.sun.mail.util.BASE64EncoderStream;
-import io.smallrye.mutiny.Uni;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuples;
 
@@ -33,53 +25,18 @@ public class MailMessageWorker implements Runnable{
     private String userName;
     private String token;
     private ErpEmailsDBO erpEmailsDBO;
-
     private Integer priorityOrderLevel;
-
-    private List<Object> erpEmailsDBOList = new ArrayList<>();
-
+    private Mutiny.SessionFactory sessionFactory;
     private RedisSysPropertiesData redisSysPropertiesData;
 
-    @Autowired
-    private Mutiny.SessionFactory sessionFactory;
-
-    //private static CommonApiTransaction commonApiTransaction;
-
-
-//    @Autowired
-//    private MailMessageWorker(RedisSysPropertiesData redisSysPropertiesData) {
-//        MailMessageWorker.redisSysPropertiesData = redisSysPropertiesData;
-//    }
-
-    public MailMessageWorker(String userName, String token, Integer priorityOrderLevel, ErpEmailsDBO erpEmailsDBO, List<Object> erpEmailsDBOList) {
+    public MailMessageWorker(String userName, String token, Integer priorityOrderLevel, ErpEmailsDBO erpEmailsDBO, Mutiny.SessionFactory sessionFactory, RedisSysPropertiesData redisSysPropertiesData) {
         this.userName = userName;
         this.token = token;
         this.priorityOrderLevel = priorityOrderLevel;
         this.erpEmailsDBO = erpEmailsDBO;
-        this.erpEmailsDBOList = erpEmailsDBOList;
-        //this.redisSysPropertiesData = redisSysPropertiesData;
-        //this.commonApiTransaction = commonApiTransaction;
+        this.sessionFactory = sessionFactory;
+        this.redisSysPropertiesData = redisSysPropertiesData;
     }
-
-//    public static synchronized String getUserNameByPriorityOrderForEmail(String userName, int count, Integer priorityOrderLevel){
-//        try{
-//            if(Utils.isNullOrEmpty(userName)){
-//                System.out.println("getUserNameByPriorityOrderForEmail USER_MAILS_1 : " + Constants.USER_MAILS_1);
-//                String senderMail = Constants.USER_MAILS_1.get(priorityOrderLevel).get(count);
-//                System.out.println("getUserNameByPriorityOrderForEmail count : " + count + " , senderMail : "+ senderMail);
-//                return senderMail;
-//            }else{
-//                System.out.println("set next sender mail to user mails1 map when quota limit exceeds");
-//                if(!Utils.isNullOrEmpty(Constants.USER_MAILS_2) && Constants.USER_MAILS_1.get(priorityOrderLevel).contains(userName)){
-//                    Constants.USER_MAILS_1.get(priorityOrderLevel).set(Constants.USER_MAILS_1.get(priorityOrderLevel).indexOf(userName), Constants.USER_MAILS_2.get(priorityOrderLevel).remove(0));
-//                    Constants.USER_MAILS_2.get(priorityOrderLevel).add(userName);
-//                }
-//            }
-//        }catch(Exception e){
-//            e.printStackTrace();
-//        }
-//        return null;
-//    }
 
     public static synchronized String getUserNameByPriorityOrderForEmail(int count, Integer priorityOrderLevel){
         try{
@@ -114,8 +71,7 @@ public class MailMessageWorker implements Runnable{
         emailsDBO.setEmailIsSent(false);
         emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_EMAIL.name(), null, null));
         emailsDBO.setRecordStatus('A');
-        //commonApiTransaction.saveErpEmailsDBO(emailsDBO);
-        CommonApiTransaction.getInstance().saveErpEmailsDBO(emailsDBO);
+        saveErpEmailsDBO(emailsDBO);
 
         Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).forEach(tuple -> {
             if(tuple.getT1().equalsIgnoreCase(userName)){
@@ -124,20 +80,19 @@ public class MailMessageWorker implements Runnable{
         });
     }
 
+    public void saveErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){
+        this.sessionFactory.withTransaction((s, tx) -> s.persist(erpEmailsDBO)).subscribeAsCompletionStage();
+    }
+
     public void updateErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){
-        //commonApiTransaction.updateErpEmailsDBO(erpEmailsDBO);
-        //sessionFactory.withTransaction((session, tx) -> session.merge(erpEmailsDBO)).subscribeAsCompletionStage();
-//        Mutiny.SessionFactory sf = Mutiny.
-//        Mutiny.Session session = (Mutiny.Session) sessionFactory.openSession();
-        sessionFactory.withTransaction((s, tx) -> s.merge(erpEmailsDBO)).subscribeAsCompletionStage();
-        //CommonApiTransaction.getInstance().updateErpEmailsDBO(erpEmailsDBO);
+        this.sessionFactory.withTransaction((s, tx) -> s.merge(erpEmailsDBO)).subscribeAsCompletionStage();
     }
 
     @Override
     public void run() {
         if(!Utils.isNullOrEmpty(userName) && !Utils.isNullOrEmpty(erpEmailsDBO)){
             SMTPTransport transport = null;
-            Session session = null;
+            Session session;
             try{
                 Properties props = new Properties();
                 props.put("mail.transport.protocol", "smtp");
@@ -167,11 +122,7 @@ public class MailMessageWorker implements Runnable{
                         transport.close();
                         erpEmailsDBO.setEmailIsSent(true);
                         erpEmailsDBO.setEmailSentTime(LocalDateTime.now());
-                        erpEmailsDBOList.add(erpEmailsDBO);
-                        //CommonApiTransaction.getInstance().updateErpEmailsDBO(erpEmailsDBO);
-                        //commonApiTransaction.updateErpEmailsDBO(erpEmailsDBO);
-                        //CommonApiHandler.getInstance().updateErpEmailsDBO(erpEmailsDBO);
-                        //updateErpEmailsDBO(erpEmailsDBO);
+                        updateErpEmailsDBO(erpEmailsDBO);
                     }
                 }
             }catch (MessagingException m) {

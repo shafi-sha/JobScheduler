@@ -2,12 +2,12 @@ package com.christ.job.services.tasks;
 
 import com.christ.job.services.common.Constants;
 import com.christ.job.services.common.RedisSysPropertiesData;
-import com.christ.job.services.common.SysProperties;
 import com.christ.job.services.common.Utils;
 import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
 import com.christ.job.services.dbobjects.common.ErpNotificationEmailSenderSettingsDBO;
 import com.christ.job.services.transactions.common.CommonApiTransaction;
 import com.christ.job.services.utilities.MailMessageWorker;
+import org.hibernate.reactive.mutiny.Mutiny;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -15,15 +15,11 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.util.function.Tuple2;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +30,9 @@ public class SendMailTask implements Tasklet {
 
     @Autowired
     private CommonApiTransaction commonApiTransaction;
+
+    @Autowired
+    private Mutiny.SessionFactory sessionFactory;
 
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
@@ -48,13 +47,10 @@ public class SendMailTask implements Tasklet {
             //get mail sender settings
             List<ErpNotificationEmailSenderSettingsDBO> erpNotificationEmailSenderSettingsDBOList = commonApiTransaction.getEmailSenderSettings();
             if(!Utils.isNullOrEmpty(erpNotificationEmailSenderSettingsDBOList)){
-//                Map<Integer, List<ErpNotificationEmailSenderSettingsDBO>> emailSenderMap = erpNotificationEmailSenderSettingsDBOList.stream().collect(Collectors.groupingBy(ErpNotificationEmailSenderSettingsDBO::getPriorityLevelOrder));
-//                Map<Integer, Map<String, ErpNotificationEmailSenderSettingsDBO>> emailSendMap = erpNotificationEmailSenderSettingsDBOList.stream().collect(Collectors.groupingBy(ErpNotificationEmailSenderSettingsDBO::getPriorityLevelOrder,Collectors.toMap(ErpNotificationEmailSenderSettingsDBO::getSenderEmail, o-> o)));
                 Map<Integer, Map<String, String>> emailSenderMap = erpNotificationEmailSenderSettingsDBOList.stream()
                         .collect(Collectors.groupingBy(ErpNotificationEmailSenderSettingsDBO::getPriorityLevelOrder, Collectors.toMap(ErpNotificationEmailSenderSettingsDBO::getSenderEmail, ErpNotificationEmailSenderSettingsDBO::getToken)));
                 Constants.SEND_MAIL_COUNT = 1;
                 List<ErpEmailsDBO> erpEmailsDBOS = commonApiTransaction.getErpEmailsDBOs();
-                List<Object> erpEmailsDBOList = new ArrayList<>();
                 if(!Utils.isNullOrEmpty(erpEmailsDBOS)){
                     int count = Constants.LAST_MAIL_SEND_COUNT;
                     int mailSendCount = 1;
@@ -84,15 +80,12 @@ public class SendMailTask implements Tasklet {
                                 Constants.LAST_MAIL_SEND_COUNT = count;
                                 System.out.println("LAST_MAIL_SEND_COUNT after: "+ count);
                                 if (!Utils.isNullOrEmpty(Constants.MAIL_USERNAME)) {
-                                    //Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, token, erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO, redisSysPropertiesData, commonApiTransaction);
-                                    Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, token, erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO, erpEmailsDBOList);
+                                    Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, token, erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO, sessionFactory, redisSysPropertiesData);
                                     executorService.execute(mailWorker);
-                                    //System.out.println("EmailIsSent : "+erpEmailsDBO.getEmailIsSent());
-                                    //erpEmailsDBOList.add(erpEmailsDBO);
                                     threadCount++;
                                     if(threadCount == (priorityMailsSize - 1)){
                                         threadCount = 0;
-                                        Thread.sleep(5000);
+                                        Thread.sleep(2000);
                                     }
                                 }
                             }
@@ -103,7 +96,6 @@ public class SendMailTask implements Tasklet {
                         }
                     }
                     executorService.shutdown();
-                    commonApiTransaction.updateDBOS(erpEmailsDBOList);
                 }
             }
         }catch (Exception e){

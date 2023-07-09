@@ -164,7 +164,7 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(refreshMailTokenJobDetail())
                 .withIdentity("refreshMailTokenJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("0 05 * ? * *"))//0 0/55 * * * ?  // 0 55 * ? * *
+                .withSchedule(CronScheduleBuilder.cronSchedule("30 44 * ? * *"))//0 0/55 * * * ?  //0 32 * ? * *
                 .build();
     }
 
@@ -175,7 +175,7 @@ public class QuartzConfig {
                 .forJob(sendMailJobDetail())
                 .withIdentity("sendMailJobTrigger")
                 //.withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(15, 48))
-                .withSchedule(CronScheduleBuilder.cronSchedule("30 24 13 * * ?"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("0 0/2 * * * ?"))//30 44 * ? * * //00 47 22 * * ?  //* 0/2 * * * ?
                 .build();
     }
 
@@ -197,8 +197,8 @@ public class QuartzConfig {
             jobDetailsList.add(sendMailJobDetail());
             triggersList.add(sendMailJobTrigger());
 //        }
-//        jobDetailsList.add(refreshMailTokenJobDetail());
-//        triggersList.add(refreshMailTokenJobTrigger());
+        jobDetailsList.add(refreshMailTokenJobDetail());
+        triggersList.add(refreshMailTokenJobTrigger());
 
         /*
         * setting job details for all the jobs
@@ -215,9 +215,35 @@ public class QuartzConfig {
 
     @Bean
     public Properties quartzProperties() throws IOException {
-        PropertiesFactoryBean propertiesFactoryBean = new PropertiesFactoryBean();
-        propertiesFactoryBean.setLocation(new ClassPathResource("/quartz.properties"));
-        propertiesFactoryBean.afterPropertiesSet();
-        return propertiesFactoryBean.getObject();
+        final Properties quartzProperties = new Properties();
+        quartzProperties.setProperty("org.quartz.scheduler.instanceName", "JobScheduler");
+        quartzProperties.setProperty("org.quartz.threadPool.threadCount", "5");
+        return quartzProperties;
     }
+
+//    @Bean
+//    public Properties quartzProperties1() throws IOException {
+//        PropertiesFactoryBean propertiesFactoryBean = new PropertiesFactoryBean();
+//        propertiesFactoryBean.setLocation(new ClassPathResource("/quartz.properties"));
+//        propertiesFactoryBean.afterPropertiesSet();
+//        return propertiesFactoryBean.getObject();
+//    }
+
+//    #scheduler name will be "JobScheduler"
+//    #org.quartz.scheduler.instanceName = JobScheduler
+//
+//    #maximum of 5 jobs can be run simultaneously
+//    #org.quartz.threadPool.threadCount = 5
+//    #org.quartz.threadPool.threadPriority= Thread.NORM_PRIORITY(5)
+//
+//    #============================================================================
+//    # Configure ThreadPool
+//    #============================================================================
+//
+//    #org.quartz.threadPool.class = org.quartz.simpl.SimpleThreadPool
+//    #org.quartz.threadPool.threadCount: 20
+//    ##Thread.MAX_PRIORITY 10
+//    #org.quartz.threadPool.threadPriority: 5
+
+
 }
