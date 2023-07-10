@@ -12,6 +12,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import jdk.jshell.execution.Util;
 import org.hibernate.reactive.mutiny.Mutiny;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuples;
@@ -65,7 +66,6 @@ public class MailMessageWorker implements Runnable{
     public static synchronized String getUserNameByPriorityOrderForEmailNew(Integer priorityOrderLevel,
         Map<Integer, LinkedList<String>> priorityMailsMap){
         try{
-            //priorityMailsMap.get(priorityOrderLevel).contains(lastUsedPriorityMail)
             String lastUsedPriorityMail = "";
             int index = 0;
             System.out.println("index before : "+index);
@@ -81,8 +81,117 @@ public class MailMessageWorker implements Runnable{
             }
             System.out.println("index after : "+index);
             String mail = priorityMailsMap.get(priorityOrderLevel).get(index);
-            System.out.println("mail : "+mail);
+            System.out.println("mail check before : "+mail);
             Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+            mail = getUserNameByPriorityOrderForEmailCheck1(priorityOrderLevel, priorityMailsMap, mail, index);
+            System.out.println("mail check after : "+mail);
+            return mail;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static synchronized String getUserNameByPriorityOrderForEmailCheck(Integer priorityOrderLevel,
+        Map<Integer, LinkedList<String>> priorityMailsMap){
+        try{
+//            String lastUsedPriorityMail = "";
+//            int index = 0;
+//            if(Constants.PRIORITY_LAST_USED_MAIL.containsKey(priorityOrderLevel)){
+//                lastUsedPriorityMail = Constants.PRIORITY_LAST_USED_MAIL.get(priorityOrderLevel);
+//                index = priorityMailsMap.get(priorityOrderLevel).indexOf(lastUsedPriorityMail);
+//                if (index == (priorityMailsMap.get(priorityOrderLevel).size() - 1)) {
+//                    index = 0;
+//                } else {
+//                    index++;
+//                }
+//            }
+//            String mail = priorityMailsMap.get(priorityOrderLevel).get(index);
+//            Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+            String mail = "";
+            if(!Utils.isNullOrEmpty(Constants.PRIORITY_FAILED_MAILS)){
+                if(!Utils.isNullOrEmpty(priorityMailsMap.get(priorityOrderLevel))){
+                    LinkedList<String> mailList = priorityMailsMap.get(priorityOrderLevel);
+                    for (int i = 0; i < mailList.size(); i++) {
+                        if(!Constants.PRIORITY_FAILED_MAILS.containsKey(mailList.get(i))){
+                            if(Constants.PRIORITY_LAST_USED_MAIL.containsKey(priorityOrderLevel)){
+                                if(mailList.get(i).equalsIgnoreCase(Constants.PRIORITY_LAST_USED_MAIL.get(priorityOrderLevel))){
+                                    if (i == (priorityMailsMap.get(priorityOrderLevel).size() - 1)) {
+                                        mail = mailList.get(i);
+                                    } else {
+                                        mail = mailList.get(i+1);
+                                    }
+                                    Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+                                }
+                            } else {
+                                mail = mailList.get(i);
+                                Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+                            }
+                        } else {
+                            String[] mailExceptionData = Constants.PRIORITY_FAILED_MAILS.get(mailList.get(i)).split("_");
+                            //if("quotaExceeded".equalsIgnoreCase(exceptionData[0]))
+                            long day = Duration.between(LocalDateTime.now(), Utils.convertStringLocalDateTimeToLocalDateTime(mailExceptionData[1])).toDays();
+                            if(day > 1){
+                                Constants.PRIORITY_FAILED_MAILS.remove(mailList.get(i));
+                            }
+                        }
+                    }
+                }
+            } else {
+                if(!Utils.isNullOrEmpty(priorityMailsMap.get(priorityOrderLevel))){
+                    LinkedList<String> mailList = priorityMailsMap.get(priorityOrderLevel);
+                    for (int i = 0; i < mailList.size(); i++) {
+                        if(Constants.PRIORITY_LAST_USED_MAIL.containsKey(priorityOrderLevel)){
+                            if(mailList.get(i).equalsIgnoreCase(Constants.PRIORITY_LAST_USED_MAIL.get(priorityOrderLevel))){
+                                if (i == (priorityMailsMap.get(priorityOrderLevel).size() - 1)) {
+                                    mail = mailList.get(i);
+                                } else {
+                                    mail = mailList.get(i+1);
+                                }
+                                Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+                            }
+                        } else {
+                            mail = mailList.get(i);
+                            Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+                        }
+                    }
+                }
+            }
+            System.out.println("mail : "+mail);
+            return Utils.isNullOrEmpty(mail) ? priorityMailsMap.get(priorityOrderLevel).get(0) : mail;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static synchronized String getUserNameByPriorityOrderForEmailCheck1(Integer priorityOrderLevel,
+        Map<Integer, LinkedList<String>> priorityMailsMap, String email, int index){
+        try{
+            String mail = email;
+            if(!Utils.isNullOrEmpty(Constants.PRIORITY_FAILED_MAILS)){
+                if(!Utils.isNullOrEmpty(priorityMailsMap.get(priorityOrderLevel))){
+                    LinkedList<String> mailList = priorityMailsMap.get(priorityOrderLevel);
+                    for (int i = index; i < mailList.size(); i++) {
+                        if(!Constants.PRIORITY_FAILED_MAILS.containsKey(mailList.get(i))){
+                            if (i == (priorityMailsMap.get(priorityOrderLevel).size() - 1)) {
+                                mail = mailList.get(0);
+                            } else {
+                                mail = mailList.get(i+1);
+                            }
+                            Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+                        } else {
+                            String[] mailExceptionData = Constants.PRIORITY_FAILED_MAILS.get(mailList.get(i)).split("_");
+                            //if("quotaExceeded".equalsIgnoreCase(exceptionData[0]))
+                            long day = Duration.between(LocalDateTime.now(), Utils.convertStringLocalDateTimeToLocalDateTime(mailExceptionData[1])).toDays();
+                            if(day > 1){
+                                Constants.PRIORITY_FAILED_MAILS.remove(mailList.get(i));
+                            }
+                        }
+                    }
+                }
+            }
+            System.out.println("mail : "+mail);
             return mail;
         }catch(Exception e){
             e.printStackTrace();
@@ -97,23 +206,29 @@ public class MailMessageWorker implements Runnable{
         emailsDBO.setEmailSubject(emailSubject);
         emailsDBO.setPriorityLevelOrder(priorityLevelOrder);
         emailsDBO.setEmailIsSent(false);
-        emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_EMAIL.name(), null, null));
+        emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_INTIMATION_EMAIL.name(), null, null));
         emailsDBO.setRecordStatus('A');
         saveErpEmailsDBO(emailsDBO);
 
-        Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).forEach(tuple -> {
-            if(tuple.getT1().equalsIgnoreCase(userName)){
-                tuple = Tuples.of(tuple.getT1(), exceptionName, true, LocalDateTime.now());
-            }
-        });
+//        Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).forEach(tuple -> {
+//            if(tuple.getT1().equalsIgnoreCase(userName)){
+//                tuple = Tuples.of(tuple.getT1(), exceptionName, true, LocalDateTime.now());
+//            }
+//        });
+//        Map<String, String> exceptionMailMap = new LinkedHashMap<>();
+//        exceptionMailMap.put(exceptionName, LocalDateTime.now().toString());
+        //Utils.convertStringLocalDateTimeToLocalDateTime()
+        Constants.PRIORITY_FAILED_MAILS.put(userName, exceptionName +"_"+ Utils.convertLocalDateTimeToStringDate(LocalDateTime.now()));
     }
 
     public void saveErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){
         this.sessionFactory.withTransaction((s, tx) -> s.persist(erpEmailsDBO)).subscribeAsCompletionStage();
+        //this.sessionFactory.close();
     }
 
     public void updateErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){
         this.sessionFactory.withTransaction((s, tx) -> s.merge(erpEmailsDBO)).subscribeAsCompletionStage();
+        //this.sessionFactory.close();
     }
 
     @Override
@@ -171,20 +286,20 @@ public class MailMessageWorker implements Runnable{
                     String emailSubject = "Daily user sending quota exceeded";
                     String senderName = "Christ University";
                     String emailContent = "Daily user sending quota exceeded for email: "+this.userName;
-                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "daily quota exceeded");
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "quotaExceeded");
                 } else if(m.toString().contains("334") || m.toString().contains("jakarta.mail.MessagingException: 334")){
                     System.out.println("Token expired");
                     //send mail to erp support- recepient mail should be sys_properties
                     String emailSubject = "Token Expired";
                     String senderName = "Christ University";
                     String emailContent = "Token has been expired for email: "+this.userName;
-                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "token expired");
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "tokenExpired");
                 } else {
                     System.out.println("Email Sending Failed");
                     String emailSubject = "Email Sending Failed";
                     String senderName = "Christ University";
                     String emailContent = "Something went wrong for email: "+this.userName;
-                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "something went wrong");
+                    sendIntimationToERP(emailContent, emailSubject, senderName, this.priorityOrderLevel, this.userName, "wentwrong");
                 }
                 System.out.println("--------------------------------------------------------------------------------------------------------");
             } catch (Exception e) {

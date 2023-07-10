@@ -110,7 +110,7 @@ public class RefreshMailTokenTask implements Tasklet {
         emailsDBO.setEmailSubject("Refresh Token Expired");
         emailsDBO.setPriorityLevelOrder(2);
         emailsDBO.setEmailIsSent(false);
-        emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_EMAIL.name(), null, null));
+        emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_INTIMATION_EMAIL.name(), null, null));
         emailsDBO.setRecordStatus('A');
         commonApiTransaction.saveErpEmailsDBO(emailsDBO);
     }
