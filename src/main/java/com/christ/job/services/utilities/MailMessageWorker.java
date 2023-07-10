@@ -62,6 +62,34 @@ public class MailMessageWorker implements Runnable{
         return null;
     }
 
+    public static synchronized String getUserNameByPriorityOrderForEmailNew(Integer priorityOrderLevel,
+        Map<Integer, LinkedList<String>> priorityMailsMap){
+        try{
+            //priorityMailsMap.get(priorityOrderLevel).contains(lastUsedPriorityMail)
+            String lastUsedPriorityMail = "";
+            int index = 0;
+            System.out.println("index before : "+index);
+            if(Constants.PRIORITY_LAST_USED_MAIL.containsKey(priorityOrderLevel)){
+                lastUsedPriorityMail = Constants.PRIORITY_LAST_USED_MAIL.get(priorityOrderLevel);
+                System.out.println("lastUsedPriorityMail : "+lastUsedPriorityMail);
+                index = priorityMailsMap.get(priorityOrderLevel).indexOf(lastUsedPriorityMail);
+                if (index == (priorityMailsMap.get(priorityOrderLevel).size() - 1)) {
+                    index = 0;
+                } else {
+                    index++;
+                }
+            }
+            System.out.println("index after : "+index);
+            String mail = priorityMailsMap.get(priorityOrderLevel).get(index);
+            System.out.println("mail : "+mail);
+            Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+            return mail;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public void sendIntimationToERP(String emailContent, String emailSubject, String senderName, Integer priorityLevelOrder, String userName, String exceptionName){
         ErpEmailsDBO emailsDBO = new ErpEmailsDBO();
         emailsDBO.setSenderName(senderName);

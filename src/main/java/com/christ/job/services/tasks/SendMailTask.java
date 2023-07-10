@@ -16,6 +16,7 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -49,6 +50,9 @@ public class SendMailTask implements Tasklet {
             if(!Utils.isNullOrEmpty(erpNotificationEmailSenderSettingsDBOList)){
                 Map<Integer, Map<String, String>> emailSenderMap = erpNotificationEmailSenderSettingsDBOList.stream()
                         .collect(Collectors.groupingBy(ErpNotificationEmailSenderSettingsDBO::getPriorityLevelOrder, Collectors.toMap(ErpNotificationEmailSenderSettingsDBO::getSenderEmail, ErpNotificationEmailSenderSettingsDBO::getToken)));
+                Map<Integer, LinkedList<String>> priorityMailsMap = erpNotificationEmailSenderSettingsDBOList.stream()
+                        .collect(Collectors.groupingBy(ErpNotificationEmailSenderSettingsDBO::getPriorityLevelOrder,
+                                Collectors.mapping(ErpNotificationEmailSenderSettingsDBO::getSenderEmail, Collectors.toCollection(LinkedList::new))));
                 Constants.SEND_MAIL_COUNT = 1;
                 List<ErpEmailsDBO> erpEmailsDBOS = commonApiTransaction.getErpEmailsDBOs();
                 if(!Utils.isNullOrEmpty(erpEmailsDBOS)){
@@ -56,7 +60,7 @@ public class SendMailTask implements Tasklet {
                     int mailSendCount = 1;
                     System.out.println("----------------------------");
                     System.out.println("recipient emails size : " + erpEmailsDBOS.size());
-                    System.out.println("LAST_MAIL_SEND_COUNT before: "+ count);
+                    //System.out.println("LAST_MAIL_SEND_COUNT before: "+ count);
                     int priorityMailsSize = emailSenderMap.get(2).size();
                     System.out.println("priorityMailsSize size : "+ priorityMailsSize);
                     ExecutorService executorService = Executors.newFixedThreadPool(priorityMailsSize);
@@ -67,7 +71,8 @@ public class SendMailTask implements Tasklet {
                                 System.out.println("-------------mail "+mailSendCount+ " : " + erpEmailsDBO.getRecipientEmail() +" ---------------");
                                 erpEmailsDBO.setEmailContent(erpEmailsDBO.getEmailContent() + " mailSendCount : " + mailSendCount);
                                 mailSendCount++;
-                                Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmail(count, erpEmailsDBO.getPriorityLevelOrder());
+                                //Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmail(count, erpEmailsDBO.getPriorityLevelOrder());
+                                Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmailNew(2, priorityMailsMap);
                                 String token = emailSenderMap.get(erpEmailsDBO.getPriorityLevelOrder()).get(Constants.MAIL_USERNAME);
                                 System.out.println("threadCount : "+ threadCount);
                                 System.out.println("MAIL_USERNAME : "+ Constants.MAIL_USERNAME);
@@ -78,7 +83,7 @@ public class SendMailTask implements Tasklet {
                                     count++;
                                 }
                                 Constants.LAST_MAIL_SEND_COUNT = count;
-                                System.out.println("LAST_MAIL_SEND_COUNT after: "+ count);
+                                //System.out.println("LAST_MAIL_SEND_COUNT after: "+ count);
                                 if (!Utils.isNullOrEmpty(Constants.MAIL_USERNAME)) {
                                     Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, token, erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO, sessionFactory, redisSysPropertiesData);
                                     executorService.execute(mailWorker);

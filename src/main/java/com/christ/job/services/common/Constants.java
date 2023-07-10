@@ -38,6 +38,5 @@ public class Constants {
 
     public static String MAIL_USERNAME = "";
 
-    public static String MAIL_PASSWORD = "";
-
+    public static Map<Integer, String> PRIORITY_LAST_USED_MAIL = new LinkedHashMap<>();
 }
