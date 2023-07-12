@@ -164,7 +164,8 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(refreshMailTokenJobDetail())
                 .withIdentity("refreshMailTokenJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("00 01 * ? * *"))//0 0/55 * * * ?  //0 32 * ? * *  //00 02 * ? * *
+                .withSchedule(CronScheduleBuilder.cronSchedule("30 31 21 * * ?"))//0 0/55 * * * ?  //0 32 * ? * *  //00 02 * ? * *
+                //.withSchedule(CronScheduleBuilder.cronSchedule("00 02 * ? * *"))//0 0/55 * * * ?  //0 32 * ? * *  //00 02 * ? * *
                 .build();
     }
 
@@ -175,7 +176,7 @@ public class QuartzConfig {
                 .forJob(sendMailJobDetail())
                 .withIdentity("sendMailJobTrigger")
                 //.withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(15, 48))
-                .withSchedule(CronScheduleBuilder.cronSchedule("10 43 17 * * ?"))//30 44 * ? * * //00 47 22 * * ?  //0 0/2 * * * ?
+                .withSchedule(CronScheduleBuilder.cronSchedule("00 22 * ? * *"))//30 44 * ? * * //00 47 22 * * ?  //0 0/2 * * * ?
                 .build();
     }
 

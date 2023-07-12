@@ -7,5 +7,6 @@ public enum SysProperties {
     SEND_SMS,
     USER_MAILS,
     MAIL_PASSWORD,
-    ERP_INTIMATION_EMAIL;
+    ERP_INTIMATION_EMAIL,
+
 }

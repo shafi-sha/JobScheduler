@@ -7,6 +7,7 @@ import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
 import com.christ.job.services.dbobjects.common.ErpNotificationEmailSenderSettingsDBO;
 import com.christ.job.services.transactions.common.CommonApiTransaction;
 import com.christ.job.services.utilities.MailMessageWorker;
+import com.christ.utility.lib.caching.CacheUtils;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
@@ -55,34 +56,40 @@ public class SendMailTask implements Tasklet {
                                 Collectors.mapping(ErpNotificationEmailSenderSettingsDBO::getSenderEmail, Collectors.toCollection(LinkedList::new))));
                 Constants.SEND_MAIL_COUNT = 1;
                 List<ErpEmailsDBO> erpEmailsDBOS = commonApiTransaction.getErpEmailsDBOs();
+                CacheUtils.instance.clearMap("__priority_failed_emails_map_");
                 if(!Utils.isNullOrEmpty(erpEmailsDBOS)){
                     int count = Constants.LAST_MAIL_SEND_COUNT;
                     int mailSendCount = 1;
                     System.out.println("----------------------------");
                     System.out.println("recipient emails size : " + erpEmailsDBOS.size());
                     //System.out.println("LAST_MAIL_SEND_COUNT before: "+ count);
-                    int priorityMailsSize = emailSenderMap.get(2).size();
-                    System.out.println("priorityMailsSize size : "+ priorityMailsSize);
-                    ExecutorService executorService = Executors.newFixedThreadPool(priorityMailsSize);
+                    //int priorityMailsSize = emailSenderMap.get(2).size();
+                    //System.out.println("priorityMailsSize size : "+ priorityMailsSize);
+                    ExecutorService executorService = Executors.newFixedThreadPool(3);
                     int threadCount = 0;
+                    int priorityMailsSize = 0;
                     for (ErpEmailsDBO erpEmailsDBO : erpEmailsDBOS) {
                         try{
                             if(!Utils.isNullOrEmpty(erpEmailsDBO.getRecipientEmail())){
+                                if(Utils.isNullOrEmpty(priorityMailsSize))
+                                    priorityMailsSize = emailSenderMap.get(erpEmailsDBO.getPriorityLevelOrder()).size();
+                                System.out.println("priorityMailsSize size : "+ priorityMailsSize);
                                 System.out.println("-------------mail "+mailSendCount+ " : " + erpEmailsDBO.getRecipientEmail() +" ---------------");
                                 erpEmailsDBO.setEmailContent(erpEmailsDBO.getEmailContent() + " mailSendCount : " + mailSendCount);
                                 mailSendCount++;
                                 //Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmail(count, erpEmailsDBO.getPriorityLevelOrder());
-                                Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmailNew(2, priorityMailsMap);
+                                //Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmailNew(2, priorityMailsMap);
+                                Constants.MAIL_USERNAME = MailMessageWorker.getUserNameByPriorityOrderForEmailNew1(erpEmailsDBO.getPriorityLevelOrder(), priorityMailsMap);
                                 String token = emailSenderMap.get(erpEmailsDBO.getPriorityLevelOrder()).get(Constants.MAIL_USERNAME);
-                                System.out.println("threadCount : "+ threadCount);
                                 System.out.println("MAIL_USERNAME : "+ Constants.MAIL_USERNAME);
                                 System.out.println("Token : "+ token);
-                                if (count == (priorityMailsSize - 1)) {
-                                    count = 0;
-                                } else {
-                                    count++;
-                                }
-                                Constants.LAST_MAIL_SEND_COUNT = count;
+                                System.out.println("threadCount : "+ threadCount);
+//                                if (count == (priorityMailsSize - 1)) {
+//                                    count = 0;
+//                                } else {
+//                                    count++;
+//                                }
+//                                Constants.LAST_MAIL_SEND_COUNT = count;
                                 //System.out.println("LAST_MAIL_SEND_COUNT after: "+ count);
                                 if (!Utils.isNullOrEmpty(Constants.MAIL_USERNAME)) {
                                     Runnable mailWorker = new MailMessageWorker(Constants.MAIL_USERNAME, token, erpEmailsDBO.getPriorityLevelOrder(), erpEmailsDBO, sessionFactory, redisSysPropertiesData);

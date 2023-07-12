@@ -5,6 +5,7 @@ import com.christ.job.services.common.RedisSysPropertiesData;
 import com.christ.job.services.common.SysProperties;
 import com.christ.job.services.common.Utils;
 import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
+import com.christ.utility.lib.caching.CacheUtils;
 import com.sun.mail.smtp.SMTPTransport;
 import com.sun.mail.util.BASE64EncoderStream;
 import jakarta.mail.*;
@@ -83,13 +84,98 @@ public class MailMessageWorker implements Runnable{
             String mail = priorityMailsMap.get(priorityOrderLevel).get(index);
             System.out.println("mail check before : "+mail);
             Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
-            mail = getUserNameByPriorityOrderForEmailCheck1(priorityOrderLevel, priorityMailsMap, mail, index);
+            //mail = getUserNameByPriorityOrderForEmailCheck1(priorityOrderLevel, priorityMailsMap, mail, index);
+            mail = getUserNameByPriorityOrderForEmailCheckWithRedis(priorityOrderLevel, priorityMailsMap.get(priorityOrderLevel), mail, index);
             System.out.println("mail check after : "+mail);
             return mail;
         }catch(Exception e){
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static synchronized String getUserNameByPriorityOrderForEmailNew1(Integer priorityOrderLevel,
+        Map<Integer, LinkedList<String>> priorityMailsMap){
+        try{
+            String lastUsedPriorityMail = CacheUtils.instance.get("__priority_last_used_emails_", String.valueOf(priorityOrderLevel));
+            int index = 0;
+            System.out.println("index before : "+index);
+            System.out.println("lastUsedPriorityMail : "+lastUsedPriorityMail);
+            LinkedList<String> priorityMails = priorityMailsMap.get(priorityOrderLevel);
+            System.out.println("priorityMails : "+priorityMails);
+            if(!Utils.isNullOrEmpty(lastUsedPriorityMail)){
+                index = priorityMails.indexOf(lastUsedPriorityMail);
+                System.out.println("index of "+lastUsedPriorityMail+" : "+ index);
+                if (index == (priorityMails.size() - 1)) {
+                    index = 0;
+                } else {
+                    index++;
+                }
+            }
+            System.out.println("index after : "+index);
+            String mail = priorityMails.get(index);
+            System.out.println("mail check before : "+mail);
+            //Constants.PRIORITY_LAST_USED_MAIL.put(priorityOrderLevel, mail);
+            //CacheUtils.instance.set("__priority_last_used_emails_", String.valueOf(priorityOrderLevel), mail);
+            //mail = getUserNameByPriorityOrderForEmailCheck1(priorityOrderLevel, priorityMailsMap, mail, index);
+            mail = getUserNameByPriorityOrderForEmailCheckWithRedis(priorityOrderLevel, priorityMails, mail, index);
+            System.out.println("mail check after : "+mail);
+            return mail;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static synchronized String getUserNameByPriorityOrderForEmailCheckWithRedis(Integer priorityOrderLevel,
+                                                                                       LinkedList<String> priorityMails, String email, int index){
+        String mail = email;
+        try{
+            if(!Utils.isNullOrEmpty(priorityMails)){
+                int allMailsExceptionCount = 0;
+                for (int i = index; i < priorityMails.size(); i++) {
+                    String emailExceptionData = CacheUtils.instance.get("__priority_failed_emails_map_", priorityMails.get(i));
+                    System.out.println("emailExceptionData of i="+i+" "+ priorityMails.get(i) + " : " +emailExceptionData);
+                    System.out.println("allMailsExceptionCount : "+ allMailsExceptionCount);
+                    if(Utils.isNullOrEmpty(emailExceptionData)){
+//                        if (i == (priorityMails.size() - 1)) {
+//                            mail = priorityMails.get(0);
+//                            System.out.println("0th mail "+ mail);
+//                            break;
+//                        } else {
+//                            mail = priorityMails.get(i);
+//                            System.out.println("next mail "+ mail);
+//                            break;
+//                        }
+                        mail = priorityMails.get(i);
+                        System.out.println("next mail "+ mail);
+                        break;
+                    } else {
+                        System.out.println("mail "+priorityMails.get(i)+" got exception : ");
+                        long day = Duration.between(LocalDateTime.now(), Utils.convertStringLocalDateTimeToLocalDateTime1(emailExceptionData.split("_")[1])).toDays();
+                        System.out.println("day : "+day);
+                        if(day >= 1){
+                            CacheUtils.instance.clearKey("__priority_failed_emails_map_", priorityMails.get(i));
+                            System.out.println("mail " +priorityMails.get(i)+ " exception cleared");
+                        }
+                        allMailsExceptionCount++;
+                        if (i == (priorityMails.size() - 1)) {
+                            System.out.println("made i=0");
+                            i = -1;
+                        }
+                        if(allMailsExceptionCount == priorityMails.size()){
+                            System.out.println("all priority mails got exception");
+                            break;
+                        }
+                    }
+                }
+            }
+            CacheUtils.instance.set("__priority_last_used_emails_", String.valueOf(priorityOrderLevel), mail);
+            System.out.println("mail after checking exception : "+mail);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return mail;
     }
 
     public static synchronized String getUserNameByPriorityOrderForEmailCheck(Integer priorityOrderLevel,
@@ -200,15 +286,32 @@ public class MailMessageWorker implements Runnable{
     }
 
     public void sendIntimationToERP(String emailContent, String emailSubject, String senderName, Integer priorityLevelOrder, String userName, String exceptionName){
-        ErpEmailsDBO emailsDBO = new ErpEmailsDBO();
-        emailsDBO.setSenderName(senderName);
-        emailsDBO.setEmailContent(emailContent);
-        emailsDBO.setEmailSubject(emailSubject);
-        emailsDBO.setPriorityLevelOrder(priorityLevelOrder);
-        emailsDBO.setEmailIsSent(false);
-        emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_INTIMATION_EMAIL.name(), null, null));
-        emailsDBO.setRecordStatus('A');
-        saveErpEmailsDBO(emailsDBO);
+        //check already send email
+        boolean isEmailSendRequired = true;
+        String emailExceptionData = CacheUtils.instance.get("__priority_failed_emails_map_", userName);
+        System.out.println("sendIntimationToERP emailExceptionData");
+        if(!Utils.isNullOrEmpty(emailExceptionData)){
+            long day = Duration.between(LocalDateTime.now(), Utils.convertStringLocalDateTimeToLocalDateTime1(emailExceptionData.split("_")[1])).toDays();
+            System.out.println("sendIntimationToERP day : "+day);
+            if(day < 1){
+                isEmailSendRequired = false;
+            }
+        } else {
+            System.out.println("sendIntimationToERP emailExceptionData");
+            CacheUtils.instance.set("__priority_failed_emails_map_", userName, exceptionName +"_"+ Utils.convertLocalDateTimeToStringDateTime1(LocalDateTime.now()));
+        }
+        if(isEmailSendRequired){
+            System.out.println("sendIntimationToERP email send");
+            ErpEmailsDBO emailsDBO = new ErpEmailsDBO();
+            emailsDBO.setSenderName(senderName);
+            emailsDBO.setEmailContent(emailContent);
+            emailsDBO.setEmailSubject(emailSubject);
+            emailsDBO.setPriorityLevelOrder(priorityLevelOrder);
+            emailsDBO.setEmailIsSent(false);
+            emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_INTIMATION_EMAIL.name(), null, null));
+            emailsDBO.setRecordStatus('A');
+            saveErpEmailsDBO(emailsDBO);
+        }
 
 //        Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).forEach(tuple -> {
 //            if(tuple.getT1().equalsIgnoreCase(userName)){
@@ -218,7 +321,9 @@ public class MailMessageWorker implements Runnable{
 //        Map<String, String> exceptionMailMap = new LinkedHashMap<>();
 //        exceptionMailMap.put(exceptionName, LocalDateTime.now().toString());
         //Utils.convertStringLocalDateTimeToLocalDateTime()
-        Constants.PRIORITY_FAILED_MAILS.put(userName, exceptionName +"_"+ Utils.convertLocalDateTimeToStringDate(LocalDateTime.now()));
+
+        //Constants.PRIORITY_FAILED_MAILS.put(userName, exceptionName +"_"+ Utils.convertLocalDateTimeToStringDateTime(LocalDateTime.now()));
+
     }
 
     public void saveErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){

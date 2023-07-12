@@ -1,6 +1,6 @@
 package com.christ.utility.lib.vault;
 
-import com.christ.utility.lib.AppProperties;
+import com.christ.job.services.common.AppProperties;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;

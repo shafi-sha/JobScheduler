@@ -336,5 +336,16 @@ public class Utils {
 	public static LocalDateTime convertStringLocalDateTimeToLocalDateTime(String localDateString) {
 		return LocalDateTime.parse(localDateString, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 	}
+
+	//
+	public static String convertLocalDateTimeToStringDateTime1(LocalDateTime localDateTime) {
+		return localDateTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a"));
+	}
+
+	public static LocalDateTime convertStringLocalDateTimeToLocalDateTime1(String localDateTimeString) {
+		System.out.println("localDateTimeString before : "+localDateTimeString);
+		System.out.println("localDateTimeString after : "+LocalDateTime.parse(localDateTimeString, DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a")));
+		return LocalDateTime.parse(localDateTimeString, DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a"));
+	}
 }
 
