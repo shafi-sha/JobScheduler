@@ -23,13 +23,13 @@
         </properties>
     </persistence-unit>
 
-    <persistence-unit name="BatchPU" transaction-type="RESOURCE_LOCAL">
-        <provider>org.hibernate.reactive.provider.ReactivePersistenceProvider</provider>
-        <properties>
-            <!--            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />-->
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://10.5.13.52:3306/JOB_SCHEDULER"/>
-            <property name="jakarta.persistence.jdbc.user" value="Dev_Erp"/>
-            <property name="jakarta.persistence.jdbc.password" value="Tut06!l$2019"/>
-        </properties>
-    </persistence-unit>
+<!--    <persistence-unit name="BatchPU" transaction-type="RESOURCE_LOCAL">-->
+<!--        <provider>org.hibernate.reactive.provider.ReactivePersistenceProvider</provider>-->
+<!--        <properties>-->
+<!--            &lt;!&ndash;            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />&ndash;&gt;-->
+<!--            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://10.5.13.52:3306/JOB_SCHEDULER"/>-->
+<!--            <property name="jakarta.persistence.jdbc.user" value="Dev_Erp"/>-->
+<!--            <property name="jakarta.persistence.jdbc.password" value="Tut06!l$2019"/>-->
+<!--        </properties>-->
+<!--    </persistence-unit>-->
 </persistence>

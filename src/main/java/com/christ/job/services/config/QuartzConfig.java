@@ -164,8 +164,8 @@ public class QuartzConfig {
                 .newTrigger()
                 .forJob(refreshMailTokenJobDetail())
                 .withIdentity("refreshMailTokenJobTrigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("30 31 21 * * ?"))//0 0/55 * * * ?  //0 32 * ? * *  //00 02 * ? * *
-                //.withSchedule(CronScheduleBuilder.cronSchedule("00 02 * ? * *"))//0 0/55 * * * ?  //0 32 * ? * *  //00 02 * ? * *
+                //.withSchedule(CronScheduleBuilder.cronSchedule("30 31 21 * * ?"))//0 0/55 * * * ?  //0 32 * ? * *  //00 02 * ? * *
+                .withSchedule(CronScheduleBuilder.cronSchedule("00 13 * ? * *"))//0 0/55 * * * ?  //0 32 * ? * *  //00 02 * ? * *
                 .build();
     }
 
@@ -195,8 +195,8 @@ public class QuartzConfig {
 //        }
 //
 //        if("true".equalsIgnoreCase(redisSysPropertiesData.getSysProperties(SysProperties.SEND_MAIL.name(), null, null))){
-            jobDetailsList.add(sendMailJobDetail());
-            triggersList.add(sendMailJobTrigger());
+//            jobDetailsList.add(sendMailJobDetail());
+//            triggersList.add(sendMailJobTrigger());
 //        }
         jobDetailsList.add(refreshMailTokenJobDetail());
         triggersList.add(refreshMailTokenJobTrigger());

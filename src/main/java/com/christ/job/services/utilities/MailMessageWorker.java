@@ -13,7 +13,6 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
-import jdk.jshell.execution.Util;
 import org.hibernate.reactive.mutiny.Mutiny;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuples;
@@ -154,7 +153,7 @@ public class MailMessageWorker implements Runnable{
                         System.out.println("mail "+priorityMails.get(i)+" got exception : ");
                         long day = Duration.between(LocalDateTime.now(), Utils.convertStringLocalDateTimeToLocalDateTime1(emailExceptionData.split("_")[1])).toDays();
                         System.out.println("day : "+day);
-                        if(day >= 1){
+                        if(day >= 1 && "quotaExceeded".equalsIgnoreCase(emailExceptionData.split("_")[0])){
                             CacheUtils.instance.clearKey("__priority_failed_emails_map_", priorityMails.get(i));
                             System.out.println("mail " +priorityMails.get(i)+ " exception cleared");
                         }
