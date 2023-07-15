@@ -151,7 +151,7 @@ public class MailMessageWorker implements Runnable{
                         break;
                     } else {
                         System.out.println("mail "+priorityMails.get(i)+" got exception : ");
-                        long day = Duration.between(LocalDateTime.now(), Utils.convertStringLocalDateTimeToLocalDateTime1(emailExceptionData.split("_")[1])).toDays();
+                        long day = Duration.between(LocalDateTime.parse(emailExceptionData.split("_")[1]), LocalDateTime.now()).toDays();
                         System.out.println("day : "+day);
                         if(day >= 1 && "quotaExceeded".equalsIgnoreCase(emailExceptionData.split("_")[0])){
                             CacheUtils.instance.clearKey("__priority_failed_emails_map_", priorityMails.get(i));
@@ -290,14 +290,14 @@ public class MailMessageWorker implements Runnable{
         String emailExceptionData = CacheUtils.instance.get("__priority_failed_emails_map_", userName);
         System.out.println("sendIntimationToERP emailExceptionData");
         if(!Utils.isNullOrEmpty(emailExceptionData)){
-            long day = Duration.between(LocalDateTime.now(), Utils.convertStringLocalDateTimeToLocalDateTime1(emailExceptionData.split("_")[1])).toDays();
+            long day = Duration.between(LocalDateTime.parse(emailExceptionData.split("_")[1]), LocalDateTime.now()).toDays();
             System.out.println("sendIntimationToERP day : "+day);
             if(day < 1){
                 isEmailSendRequired = false;
             }
         } else {
             System.out.println("sendIntimationToERP emailExceptionData");
-            CacheUtils.instance.set("__priority_failed_emails_map_", userName, exceptionName +"_"+ Utils.convertLocalDateTimeToStringDateTime1(LocalDateTime.now()));
+            CacheUtils.instance.set("__priority_failed_emails_map_", userName, exceptionName +"_"+ (LocalDateTime.now()));
         }
         if(isEmailSendRequired){
             System.out.println("sendIntimationToERP email send");
@@ -311,18 +311,6 @@ public class MailMessageWorker implements Runnable{
             emailsDBO.setRecordStatus('A');
             saveErpEmailsDBO(emailsDBO);
         }
-
-//        Constants.PRIORITY_MAILS_STATUS.get(priorityOrderLevel).forEach(tuple -> {
-//            if(tuple.getT1().equalsIgnoreCase(userName)){
-//                tuple = Tuples.of(tuple.getT1(), exceptionName, true, LocalDateTime.now());
-//            }
-//        });
-//        Map<String, String> exceptionMailMap = new LinkedHashMap<>();
-//        exceptionMailMap.put(exceptionName, LocalDateTime.now().toString());
-        //Utils.convertStringLocalDateTimeToLocalDateTime()
-
-        //Constants.PRIORITY_FAILED_MAILS.put(userName, exceptionName +"_"+ Utils.convertLocalDateTimeToStringDateTime(LocalDateTime.now()));
-
     }
 
     public void saveErpEmailsDBO(ErpEmailsDBO erpEmailsDBO){

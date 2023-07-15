@@ -7,6 +7,7 @@ import com.christ.job.services.common.Utils;
 import com.christ.job.services.dbobjects.common.ErpEmailsDBO;
 import com.christ.job.services.dbobjects.common.ErpNotificationEmailSenderSettingsDBO;
 import com.christ.job.services.transactions.common.CommonApiTransaction;
+import com.christ.utility.lib.caching.CacheUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -26,6 +27,8 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,9 +52,6 @@ public class RefreshMailTokenTask implements Tasklet {
         try{
             System.out.println("--------------RefreshMailTokenTask-------------------");
             List<ErpNotificationEmailSenderSettingsDBO> erpNotificationEmailSenderSettingsDBOS = commonApiTransaction.getEmailSenderSettings();
-            //erpNotificationEmailSenderSettingsDBOS.clear();
-//            ErpNotificationEmailSenderSettingsDBO notificationEmailSenderSettingsDBO = transaction.getEmailSenderSettingDBO();
-//            erpNotificationEmailSenderSettingsDBOS.add(notificationEmailSenderSettingsDBO);
             if(!Utils.isNullOrEmpty(erpNotificationEmailSenderSettingsDBOS)){
                 List<Object> notificationEmailSenderSettingsDBOS = new ArrayList<>();
                 for (ErpNotificationEmailSenderSettingsDBO erpNotificationEmailSenderSettingsDBO : erpNotificationEmailSenderSettingsDBOS) {
@@ -113,5 +113,33 @@ public class RefreshMailTokenTask implements Tasklet {
         emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_INTIMATION_EMAIL.name(), null, null));
         emailsDBO.setRecordStatus('A');
         commonApiTransaction.saveErpEmailsDBO(emailsDBO);
+    }
+
+    public void sendIntimationToERP1(String emailContent, String emailSubject, String senderName, Integer priorityLevelOrder, String userName, String exceptionName){
+        boolean isEmailSendRequired = true;
+        String emailExceptionData = CacheUtils.instance.get("__priority_failed_emails_map_", userName);
+        System.out.println("sendIntimationToERP emailExceptionData");
+        if(!Utils.isNullOrEmpty(emailExceptionData)){
+            long day = Duration.between(LocalDateTime.parse(emailExceptionData.split("_")[1]), LocalDateTime.now()).toDays();
+            System.out.println("sendIntimationToERP day : "+day);
+            if(day < 1){
+                isEmailSendRequired = false;
+            }
+        } else {
+            System.out.println("sendIntimationToERP emailExceptionData");
+            CacheUtils.instance.set("__priority_failed_emails_map_", userName, exceptionName +"_"+ (LocalDateTime.now()));
+        }
+        if(isEmailSendRequired){
+            System.out.println("sendIntimationToERP email send");
+            ErpEmailsDBO emailsDBO = new ErpEmailsDBO();
+            emailsDBO.setSenderName(senderName);
+            emailsDBO.setEmailContent(emailContent);
+            emailsDBO.setEmailSubject(emailSubject);
+            emailsDBO.setPriorityLevelOrder(priorityLevelOrder);
+            emailsDBO.setEmailIsSent(false);
+            emailsDBO.setRecipientEmail(redisSysPropertiesData.getSysProperties(SysProperties.ERP_INTIMATION_EMAIL.name(), null, null));
+            emailsDBO.setRecordStatus('A');
+            commonApiTransaction.saveErpEmailsDBO(emailsDBO);
+        }
     }
 }
