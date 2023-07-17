@@ -1,17 +1,25 @@
 package com.christ.job.services;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
+import java.util.TimeZone;
+
 @SpringBootApplication
-@ComponentScan({"com.christ.job.services","com.christ.job.services.common"})
 //@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class })
+@ComponentScan({"com.christ.job.services", "com.christ.job.services.common", "com.christ.job.services.config"})
 public class JobSchedulerApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(JobSchedulerApplication.class, args);
+	}
+
+	@PostConstruct
+	public void init(){
+		// Setting timeZone globally
+		TimeZone.setDefault(TimeZone.getTimeZone("IST"));
 	}
 
 }

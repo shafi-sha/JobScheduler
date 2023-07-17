@@ -1,7 +1,7 @@
 package com.christ.job.services.jobs;
 
 import com.christ.job.services.jobNotificationListeners.JobCompletionNotificationListener;
-import com.christ.job.services.tasks.TaskOne;
+import com.christ.job.services.tasks.SendMessageTask;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -13,24 +13,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
-public class demoJobOne {
+public class SendMessageJob {
 
     @Autowired
-    private TaskOne taskOne;
+    private SendMessageTask sendMessageTask;
 
     @Bean
-    public Job jobOne(JobRepository jobRepository, PlatformTransactionManager transactionManager, JobCompletionNotificationListener listener) {
-        return new JobBuilder("jobOne", jobRepository)
+    public Job sendMessage(JobRepository jobRepository, PlatformTransactionManager transactionManager, JobCompletionNotificationListener listener) {
+        return new JobBuilder("sendMessage", jobRepository)
                 .listener(listener)
-                .flow(jobOneStep(jobRepository, transactionManager))
+                .flow(sendMessageStep(jobRepository, transactionManager))
                 .end()
                 .build();
     }
 
     @Bean
-    public Step jobOneStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
-        return new StepBuilder("jobOneStep", jobRepository)
-                .tasklet(taskOne, transactionManager)
+    public Step sendMessageStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("sendMessageStep", jobRepository)
+                .tasklet(sendMessageTask, transactionManager)
                 .build();
     }
 }

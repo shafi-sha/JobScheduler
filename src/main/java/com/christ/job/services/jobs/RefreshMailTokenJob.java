@@ -1,6 +1,6 @@
 package com.christ.job.services.jobs;
 
-import com.christ.job.services.tasks.SendingMailTask;
+import com.christ.job.services.tasks.RefreshMailTokenTask;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -12,23 +12,23 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
-public class SendingMailJob {
+public class RefreshMailTokenJob {
 
     @Autowired
-    private SendingMailTask sendingMailTask;
+    private RefreshMailTokenTask refreshMailTokenTask;
 
     @Bean
-    public Job sendingMail(JobRepository jobRepository, PlatformTransactionManager transactionManager){
-        return new JobBuilder("sendingMail", jobRepository)
-                .flow(sendingMailStep(jobRepository, transactionManager))
+    public Job refreshMailToken(JobRepository jobRepository, PlatformTransactionManager transactionManager){
+        return new JobBuilder("refreshMailToken", jobRepository)
+                .flow(refreshMailTokenStep(jobRepository, transactionManager))
                 .end()
                 .build();
     }
 
     @Bean
-    public Step sendingMailStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
-        return new StepBuilder("sendingMailStep", jobRepository)
-                .tasklet(sendingMailTask, transactionManager)
+    public Step refreshMailTokenStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("refreshMailTokenStep", jobRepository)
+                .tasklet(refreshMailTokenTask, transactionManager)
                 .build();
     }
 }

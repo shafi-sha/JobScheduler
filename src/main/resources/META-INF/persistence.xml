@@ -23,33 +23,13 @@
         </properties>
     </persistence-unit>
 
-    <persistence-unit name="BatchPU" transaction-type="RESOURCE_LOCAL">
-        <provider>org.hibernate.reactive.provider.ReactivePersistenceProvider</provider>
-        <properties>
-            <!--            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />-->
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://10.5.13.52:3306/JOB_SCHEDULER"/>
-            <property name="jakarta.persistence.jdbc.user" value="Dev_Erp"/>
-            <property name="jakarta.persistence.jdbc.password" value="Tut06!l$2019"/>
-            <!--   <property name="hibernate.default_schema" value="hibernate_db"/>-->
-
-            <!--<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>-->
-            <!-- <property name="hibernate.show_sql" value="true"/>
-             <property name="hibernate.format_sql" value="true"/>
-             <property name="hibernate.hbm2ddl.auto" value="validate"/>
-
-             <property name="javax.persistence.schema-generation.database.action" value="create"/>
-             <property name="javax.persistence.create-database-schemas" value="true"/>
-             <property name="javax.persistence.validation.mode" value="NONE"/>-->
-        </properties>
-    </persistence-unit>
-
 <!--    <persistence-unit name="BatchPU" transaction-type="RESOURCE_LOCAL">-->
 <!--        <provider>org.hibernate.reactive.provider.ReactivePersistenceProvider</provider>-->
 <!--        <properties>-->
-<!--            <property name="javax.persistence.jdbc.url" value="jdbc:mysql://10.5.13.52:3306/JOB_SCHEDULER"/>-->
-<!--            <property name="javax.persistence.jdbc.user" value="Dev_Erp"/>-->
-<!--            <property name="javax.persistence.jdbc.password" value="Tut06!l$2019"/>-->
+<!--            &lt;!&ndash;            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />&ndash;&gt;-->
+<!--            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://10.5.13.52:3306/JOB_SCHEDULER"/>-->
+<!--            <property name="jakarta.persistence.jdbc.user" value="Dev_Erp"/>-->
+<!--            <property name="jakarta.persistence.jdbc.password" value="Tut06!l$2019"/>-->
 <!--        </properties>-->
 <!--    </persistence-unit>-->
-
 </persistence>
